@@ -7,8 +7,8 @@
 """
 import pytest
 from hypothesis import given, strategies as st, settings, assume
-from feishu_bot.utils.command_parser import CommandParser
-from feishu_bot.models import ParsedCommand
+from src.xagent.utils.command_parser import CommandParser
+from src.xagent.models import ParsedCommand
 
 
 # 定义有效的命令前缀

@@ -58,24 +58,24 @@ docker-compose restart
 
 ```bash
 # 构建镜像
-docker build -t feishu-ai-bot .
+docker build -t xagent .
 
 # 运行容器
 docker run -d \
-  --name feishu-ai-bot \
+  --name xagent \
   --restart unless-stopped \
   --env-file .env \
   -v $(pwd)/data:/app/data \
-  feishu-ai-bot
+  xagent
 
 # 查看日志
-docker logs -f feishu-ai-bot
+docker logs -f xagent
 
 # 停止容器
-docker stop feishu-ai-bot
+docker stop xagent
 
 # 删除容器
-docker rm feishu-ai-bot
+docker rm xagent
 ```
 
 ### 数据持久化
@@ -99,15 +99,15 @@ git pull
 docker-compose up -d --build
 
 # 或使用 Docker 命令
-docker build -t feishu-ai-bot .
-docker stop feishu-ai-bot
-docker rm feishu-ai-bot
+docker build -t xagent .
+docker stop xagent
+docker rm xagent
 docker run -d \
-  --name feishu-ai-bot \
+  --name xagent \
   --restart unless-stopped \
   --env-file .env \
   -v $(pwd)/data:/app/data \
-  feishu-ai-bot
+  xagent
 ```
 
 ### CLI 功能支持
@@ -195,8 +195,8 @@ sudo apt-get install -y git
 
 ```bash
 # 克隆代码
-git clone https://github.com/fearofnull/feishu-ai-bot.git
-cd feishu-ai-bot
+git clone https://github.com/fearofnull/xagent.git
+cd xagent
 
 # 创建虚拟环境
 python3.11 -m venv venv
@@ -401,10 +401,10 @@ docker-compose logs --since 2024-01-01T00:00:00
 **Docker**：
 ```bash
 # 实时查看日志
-docker logs -f feishu-ai-bot
+docker logs -f xagent
 
 # 查看最近 100 行日志
-docker logs --tail=100 feishu-ai-bot
+docker logs --tail=100 xagent
 ```
 
 **systemd**：
@@ -433,10 +433,10 @@ logging:
 **查看容器资源使用**：
 ```bash
 # 实时监控
-docker stats feishu-ai-bot
+docker stats xagent
 
 # 查看容器详情
-docker inspect feishu-ai-bot
+docker inspect xagent
 ```
 
 **查看系统资源**：
@@ -547,7 +547,7 @@ docker-compose logs
 **测试连接**：
 ```bash
 # 进入容器
-docker exec -it feishu-ai-bot bash
+docker exec -it xagent bash
 
 # 测试网络
 ping open.feishu.cn
@@ -563,7 +563,7 @@ ping open.feishu.cn
 **测试 API**：
 ```bash
 # 进入容器
-docker exec -it feishu-ai-bot bash
+docker exec -it xagent bash
 
 # 测试配置
 python config.py
@@ -630,7 +630,7 @@ build:
   context: .
   dockerfile: Dockerfile
   cache_from:
-    - feishu-ai-bot:latest
+    - xagent:latest
 ```
 
 ### 3. 优化资源配置

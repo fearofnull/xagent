@@ -1,6 +1,6 @@
-# 飞书 AI 机器人
+# XAgent
 
-一个功能强大的飞书智能机器人，集成多个主流 AI 服务（Claude、Gemini、OpenAI、Qwen 等），支持统一 API 接口、智能路由、会话管理和可视化配置。
+一个功能强大的智能助手系统，集成多个主流 AI 服务（Claude、Gemini、OpenAI、Qwen 等），支持统一 API 接口、智能路由、会话管理和可视化配置。
 
 ## ✨ 核心特性
 
@@ -65,7 +65,7 @@ cp .env.example .env
 # 编辑 .env 填入配置
 
 # 4. 启动服务（同时启动机器人和 Web 管理界面）
-python lark_bot.py
+python main.py
 ```
 
 ### 必需配置

@@ -6,7 +6,7 @@
 
 ```
 lark-bot/
-├── feishu_bot/          # 核心代码包
+├── xagent/          # 核心代码包
 ├── tests/               # 测试代码
 ├── scripts/             # 脚本工具
 ├── docs/                # 项目文档
@@ -22,10 +22,10 @@ lark-bot/
 
 ## 详细目录说明
 
-### feishu_bot/ - 核心代码包
+### xagent/ - 核心代码包
 
 ```
-feishu_bot/
+xagent/
 ├── core/                # 核心功能模块
 │   ├── event_handler.py         # 事件处理器
 │   ├── executor_registry.py     # 执行器注册表
@@ -50,7 +50,7 @@ feishu_bot/
 │   └── ssl_config.py            # SSL 配置
 ├── __init__.py          # 包初始化
 ├── config.py            # 配置管理
-├── feishu_bot.py        # 主应用类
+├── xagent.py        # 主应用类
 └── models.py            # 数据模型
 ```
 
@@ -209,13 +209,13 @@ Kiro IDE 的配置和规范文件（如果使用 Kiro 开发）。
 ## 添加新功能
 
 ### 添加新的执行器
-1. 在 `feishu_bot/executors/` 创建新文件
+1. 在 `xagent/executors/` 创建新文件
 2. 继承 `AIAPIExecutor` 或 `AICLIExecutor`
-3. 在 `feishu_bot/feishu_bot.py` 中注册
+3. 在 `xagent/xagent.py` 中注册
 
 ### 添加新的工具类
-1. 在 `feishu_bot/utils/` 创建新文件
-2. 在 `feishu_bot/utils/__init__.py` 中导出
+1. 在 `xagent/utils/` 创建新文件
+2. 在 `xagent/utils/__init__.py` 中导出
 
 ### 添加新的测试
 1. 在 `tests/` 创建 `test_*.py` 文件

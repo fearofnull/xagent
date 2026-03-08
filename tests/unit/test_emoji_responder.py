@@ -15,8 +15,8 @@ from lark_oapi.api.im.v1 import (
     CreateMessageReactionResponse
 )
 
-from feishu_bot.core.message_handler import MessageHandler
-from feishu_bot.utils.cache import DeduplicationCache
+from src.xagent.core.message_handler import MessageHandler
+from src.xagent.utils.cache import DeduplicationCache
 
 
 class TestEmojiResponder:

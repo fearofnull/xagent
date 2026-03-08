@@ -170,26 +170,26 @@ forwarded_allow_ips = '127.0.0.1'  # 信任的代理 IP
 ### 1. 创建服务文件
 
 ```bash
-sudo nano /etc/systemd/system/feishu-bot-web-admin.service
+sudo nano /etc/systemd/system/xagent-web-admin.service
 ```
 
 复制以下内容（根据实际路径调整）：
 
 ```ini
 [Unit]
-Description=Feishu Bot Web Admin Interface
+Description=XAgent Web Admin Interface
 After=network.target
 
 [Service]
 Type=notify
 User=www-data
 Group=www-data
-WorkingDirectory=/opt/feishu-bot
-Environment="PATH=/opt/feishu-bot/venv/bin"
-EnvironmentFile=/opt/feishu-bot/.env
+WorkingDirectory=/opt/xagent
+Environment="PATH=/opt/xagent/venv/bin"
+EnvironmentFile=/opt/xagent/.env
 
-ExecStart=/opt/feishu-bot/venv/bin/gunicorn \
-    -c /opt/feishu-bot/gunicorn.conf.py \
+ExecStart=/opt/xagent/venv/bin/gunicorn \
+    -c /opt/xagent/gunicorn.conf.py \
     wsgi:app
 
 Restart=always
@@ -200,7 +200,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/opt/feishu-bot/logs /opt/feishu-bot/data
+ReadWritePaths=/opt/xagent/logs /opt/xagent/data
 
 # 资源限制
 LimitNOFILE=65536
@@ -217,32 +217,32 @@ WantedBy=multi-user.target
 sudo systemctl daemon-reload
 
 # 启动服务
-sudo systemctl start feishu-bot-web-admin
+sudo systemctl start xagent-web-admin
 
 # 设置开机自启
-sudo systemctl enable feishu-bot-web-admin
+sudo systemctl enable xagent-web-admin
 
 # 查看状态
-sudo systemctl status feishu-bot-web-admin
+sudo systemctl status xagent-web-admin
 
 # 查看日志
-sudo journalctl -u feishu-bot-web-admin -f
+sudo journalctl -u xagent-web-admin -f
 ```
 
 ### 3. 管理服务
 
 ```bash
 # 停止服务
-sudo systemctl stop feishu-bot-web-admin
+sudo systemctl stop xagent-web-admin
 
 # 重启服务
-sudo systemctl restart feishu-bot-web-admin
+sudo systemctl restart xagent-web-admin
 
 # 重新加载配置（优雅重启）
-sudo systemctl reload feishu-bot-web-admin
+sudo systemctl reload xagent-web-admin
 
 # 查看服务日志
-sudo journalctl -u feishu-bot-web-admin --since today
+sudo journalctl -u xagent-web-admin --since today
 ```
 
 ## Nginx 反向代理
@@ -258,7 +258,7 @@ sudo apt-get install nginx
 
 ### 2. 配置 Nginx
 
-创建配置文件 `/etc/nginx/sites-available/feishu-bot-web-admin`：
+创建配置文件 `/etc/nginx/sites-available/xagent-web-admin`：
 
 ```nginx
 # HTTP 服务器（重定向到 HTTPS）
@@ -283,8 +283,8 @@ server {
     ssl_prefer_server_ciphers on;
     
     # 日志
-    access_log /var/log/nginx/feishu-bot-access.log;
-    error_log /var/log/nginx/feishu-bot-error.log;
+    access_log /var/log/nginx/xagent-access.log;
+    error_log /var/log/nginx/xagent-error.log;
     
     # 客户端请求大小限制
     client_max_body_size 10M;
@@ -310,7 +310,7 @@ server {
     
     # 静态文件缓存（可选）
     location /static/ {
-        alias /opt/feishu-bot/frontend/dist/;
+        alias /opt/xagent/frontend/dist/;
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
@@ -328,7 +328,7 @@ server {
 
 ```bash
 # 创建符号链接
-sudo ln -s /etc/nginx/sites-available/feishu-bot-web-admin /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/xagent-web-admin /etc/nginx/sites-enabled/
 
 # 测试配置
 sudo nginx -t
@@ -375,10 +375,10 @@ tail -f logs/web_admin_access.log
 tail -f logs/web_admin_error.log
 
 # Systemd 日志
-sudo journalctl -u feishu-bot-web-admin -f
+sudo journalctl -u xagent-web-admin -f
 
 # 查看最近的错误
-sudo journalctl -u feishu-bot-web-admin -p err --since today
+sudo journalctl -u xagent-web-admin -p err --since today
 ```
 
 ### 日志分析
@@ -430,7 +430,7 @@ tar -xzf backup-20240101.tar.gz
 
 **检查日志**：
 ```bash
-sudo journalctl -u feishu-bot-web-admin -n 50
+sudo journalctl -u xagent-web-admin -n 50
 ```
 
 **常见原因**：
@@ -472,7 +472,7 @@ proxy_read_timeout 300s;
 
 **检查 Gunicorn 是否运行**：
 ```bash
-sudo systemctl status feishu-bot-web-admin
+sudo systemctl status xagent-web-admin
 ```
 
 **检查端口监听**：
@@ -489,10 +489,10 @@ sudo nginx -t
 
 **配置日志轮转**：
 
-创建 `/etc/logrotate.d/feishu-bot-web-admin`：
+创建 `/etc/logrotate.d/xagent-web-admin`：
 
 ```
-/opt/feishu-bot/logs/*.log {
+/opt/xagent/logs/*.log {
     daily
     rotate 7
     compress
@@ -502,7 +502,7 @@ sudo nginx -t
     create 0640 www-data www-data
     sharedscripts
     postrotate
-        kill -USR1 $(cat /opt/feishu-bot/logs/web_admin.pid)
+        kill -USR1 $(cat /opt/xagent/logs/web_admin.pid)
     endscript
 }
 ```

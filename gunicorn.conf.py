@@ -1,11 +1,11 @@
 """
-Gunicorn Configuration for Feishu Bot Web Admin Interface
+Gunicorn Configuration for XAgent Web Admin Interface
 
 This configuration file provides production-ready settings for running
 the Web Admin Interface with Gunicorn WSGI HTTP Server.
 
 Usage:
-    gunicorn -c gunicorn.conf.py feishu_bot.web_admin.server:app
+    gunicorn -c gunicorn.conf.py src.xagent.web_admin.server:app
 
 Environment Variables:
     WEB_ADMIN_HOST: Server bind address (default: 0.0.0.0)
@@ -82,7 +82,7 @@ errorlog = errorlog if errorlog != '-' else None
 # Process Naming
 # --------------
 # Process name prefix
-proc_name = 'feishu_bot_web_admin'
+proc_name = 'xagent_web_admin'
 
 
 # Server Mechanics

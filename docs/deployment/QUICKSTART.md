@@ -1,6 +1,6 @@
 # Docker 快速部署指南
 
-5分钟快速部署飞书AI机器人到云端服务器。
+5分钟快速部署XAgent到云端服务器。
 
 ## 前置要求
 
@@ -38,7 +38,7 @@ docker-compose --version
 
 ```bash
 git clone <repository-url>
-cd feishu-ai-bot
+cd xagent
 ```
 
 ### 3. 配置环境变量
@@ -94,9 +94,9 @@ docker-compose logs -f
 看到类似以下输出说明启动成功：
 ```
 ✅ Configuration loaded successfully
-✅ FeishuBot initialized successfully
+✅ XAgent initialized successfully
 ✅ Scheduler started
-Starting FeishuBot...
+Starting XAgent...
 ```
 
 ## 常用命令
@@ -150,7 +150,7 @@ docker-compose logs
 cat .env
 
 # 验证配置
-docker run --rm --env-file .env feishu-ai-bot python config.py
+docker run --rm --env-file .env xagent python config.py
 ```
 
 ### 问题2：机器人无响应
@@ -194,7 +194,7 @@ sudo ufw enable
 crontab -e
 
 # 每天凌晨2点备份
-0 2 * * * cd /path/to/feishu-ai-bot && ./deploy.sh backup
+0 2 * * * cd /path/to/xagent && ./deploy.sh backup
 ```
 
 4. **定期更新**
@@ -210,7 +210,7 @@ docker-compose up -d --build
 
 ```bash
 # 实时监控
-docker stats feishu-ai-bot
+docker stats xagent
 
 # 查看磁盘使用
 df -h
@@ -246,7 +246,7 @@ cat data/sessions.json | python -m json.tool
 sudo apt-get install nginx
 
 # 配置反向代理
-sudo nano /etc/nginx/sites-available/feishu-bot
+sudo nano /etc/nginx/sites-available/xagent
 
 # 添加配置
 server {
@@ -261,7 +261,7 @@ server {
 }
 
 # 启用配置
-sudo ln -s /etc/nginx/sites-available/feishu-bot /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/xagent /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```

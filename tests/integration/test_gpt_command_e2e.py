@@ -11,12 +11,12 @@ Task 11.1 集成测试 - @gpt 命令端到端测试
 """
 import pytest
 from unittest.mock import Mock, MagicMock, patch
-from feishu_bot.utils.command_parser import CommandParser
-from feishu_bot.core.smart_router import SmartRouter
-from feishu_bot.core.unified_api import UnifiedAPIInterface
-from feishu_bot.core.provider_config_manager import ProviderConfigManager
-from feishu_bot.core.executor_registry import ExecutorRegistry, AIExecutor
-from feishu_bot.models import ParsedCommand, ProviderConfig, ExecutionResult
+from src.xagent.utils.command_parser import CommandParser
+from src.xagent.core.smart_router import SmartRouter
+from src.xagent.core.unified_api import UnifiedAPIInterface
+from src.xagent.core.provider_config_manager import ProviderConfigManager
+from src.xagent.core.executor_registry import ExecutorRegistry, AIExecutor
+from src.xagent.models import ParsedCommand, ProviderConfig, ExecutionResult
 
 
 class TestGptCommandE2E:

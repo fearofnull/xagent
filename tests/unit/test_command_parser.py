@@ -4,8 +4,8 @@
 验证命令解析器正确处理 @gpt 和 CLI 前缀，同时拒绝传统 API 前缀
 """
 import pytest
-from feishu_bot.utils.command_parser import CommandParser
-from feishu_bot.models import ParsedCommand
+from src.xagent.utils.command_parser import CommandParser
+from src.xagent.models import ParsedCommand
 
 
 class TestCommandParserPrefixMapping:

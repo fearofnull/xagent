@@ -4,7 +4,7 @@
 
 飞书 AI 机器人支持动态配置系统，允许用户在对话窗口中直接配置机器人行为，无需修改环境变量或重启服务。
 
-The Feishu AI Bot supports a dynamic configuration system that allows users to configure bot behavior directly in the chat window without modifying environment variables or restarting the service.
+XAgent supports a dynamic configuration system that allows users to configure bot behavior directly in the chat window without modifying environment variables or restarting the service.
 
 ## 配置优先级 / Configuration Priority
 

@@ -8,7 +8,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    用户 (Feishu User)                        │
+│                    用户 (User)                        │
 └────────────────────────┬────────────────────────────────────┘
                          │
                          ▼
@@ -118,7 +118,7 @@ claude --add-dir /path/to/project --session abc123 -p "修改配置文件"
 
 ### 会话映射机制
 
-系统维护 Feishu user_id 到 Claude session_id 的映射：
+系统维护 user_id 到 Claude session_id 的映射：
 
 **映射存储**：`data/executor_sessions.json`
 ```json
@@ -175,7 +175,7 @@ gemini --resume xyz789 --output-format json "修改配置文件"
 
 ### 会话映射机制
 
-与 Claude CLI 类似，系统维护 Feishu user_id 到 Gemini session_id 的映射。
+与 Claude CLI 类似，系统维护 user_id 到 Gemini session_id 的映射。
 
 ### 工作流程
 
@@ -207,7 +207,7 @@ gemini --resume xyz789 --output-format json "修改配置文件"
 ### 1. 命令识别
 
 ```python
-# feishu_bot/feishu_bot.py
+# xagent/xagent.py
 def _handle_session_command(self, user_id, message, ...):
     if not self.session_manager.is_session_command(message):
         return False
@@ -226,7 +226,7 @@ def _handle_session_command(self, user_id, message, ...):
 ### 2. 飞书机器人会话处理
 
 ```python
-# feishu_bot/core/session_manager.py
+# xagent/core/session_manager.py
 def create_new_session(self, user_id: str) -> Session:
     # 归档旧会话
     if user_id in self.sessions:
@@ -251,7 +251,7 @@ def create_new_session(self, user_id: str) -> Session:
 ### 3. Claude CLI 会话清除
 
 ```python
-# feishu_bot/executors/claude_cli_executor.py
+# xagent/executors/claude_cli_executor.py
 def clear_session(self, user_id: str) -> None:
     if user_id in self.session_map:
         del self.session_map[user_id]
@@ -261,7 +261,7 @@ def clear_session(self, user_id: str) -> None:
 ### 4. Gemini CLI 会话清除
 
 ```python
-# feishu_bot/executors/gemini_cli_executor.py
+# xagent/executors/gemini_cli_executor.py
 def clear_session(self, user_id: str) -> None:
     if user_id in self.session_map:
         del self.session_map[user_id]
@@ -280,7 +280,7 @@ def clear_session(self, user_id: str) -> None:
 用户发送 /new
     │
     ▼
-命令识别 (feishu_bot.py)
+命令识别 (xagent.py)
     │
     ▼
 会话管理器处理 (session_manager.py)
@@ -356,7 +356,7 @@ SESSION_TIMEOUT=86400  # 24小时
 ### 代码配置
 
 ```python
-# feishu_bot/config.py
+# xagent/config.py
 class BotConfig:
     def __init__(self):
         self.session_storage_path = os.getenv("SESSION_STORAGE_PATH", "./data/sessions.json")
@@ -464,7 +464,7 @@ python lark_bot.py
 
 ```python
 # 手动清理
-from feishu_bot.core.session_manager import SessionManager
+from xagent.core.session_manager import SessionManager
 sm = SessionManager()
 cleaned = sm.cleanup_expired_sessions()
 print(f"Cleaned {cleaned} expired sessions")

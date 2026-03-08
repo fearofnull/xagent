@@ -1,6 +1,6 @@
 # Nginx 部署指南
 
-本指南详细说明如何使用 Nginx 作为反向代理部署飞书 Bot Web 管理界面。
+本指南详细说明如何使用 Nginx 作为反向代理部署XAgent Web 管理界面。
 
 ## 目录
 
@@ -82,7 +82,7 @@ sudo systemctl status nginx
 
 ```bash
 # 从项目根目录执行
-sudo cp deployment/nginx.conf.example /etc/nginx/sites-available/feishu-bot-web-admin
+sudo cp deployment/nginx.conf.example /etc/nginx/sites-available/xagent-web-admin
 ```
 
 ### 2. 修改配置
@@ -90,7 +90,7 @@ sudo cp deployment/nginx.conf.example /etc/nginx/sites-available/feishu-bot-web-
 编辑配置文件：
 
 ```bash
-sudo nano /etc/nginx/sites-available/feishu-bot-web-admin
+sudo nano /etc/nginx/sites-available/xagent-web-admin
 ```
 
 **必须修改的配置项**：
@@ -102,11 +102,11 @@ server_name your-domain.com www.your-domain.com;
 server_name admin.example.com;
 
 # 2. 修改前端静态文件路径
-root /opt/feishu-bot/frontend/dist;
+root /opt/xagent/frontend/dist;
 # 改为你的实际路径
 
 # 3. 修改后端地址（如果不是默认的 127.0.0.1:5000）
-upstream feishu_bot_backend {
+upstream xagent_backend {
     server 127.0.0.1:5000 fail_timeout=0;
 }
 
@@ -119,7 +119,7 @@ ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
 
 ```bash
 # 创建符号链接
-sudo ln -s /etc/nginx/sites-available/feishu-bot-web-admin /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/xagent-web-admin /etc/nginx/sites-enabled/
 
 # 测试配置
 sudo nginx -t
@@ -208,13 +208,13 @@ sudo mkdir -p /etc/nginx/ssl
 
 # 生成自签名证书（有效期 365 天）
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout /etc/nginx/ssl/feishu-bot.key \
-    -out /etc/nginx/ssl/feishu-bot.crt \
+    -keyout /etc/nginx/ssl/xagent.key \
+    -out /etc/nginx/ssl/xagent.crt \
     -subj "/C=CN/ST=Beijing/L=Beijing/O=Company/CN=admin.example.com"
 
 # 修改 Nginx 配置中的证书路径
-ssl_certificate /etc/nginx/ssl/feishu-bot.crt;
-ssl_certificate_key /etc/nginx/ssl/feishu-bot.key;
+ssl_certificate /etc/nginx/ssl/xagent.crt;
+ssl_certificate_key /etc/nginx/ssl/xagent.key;
 ```
 
 **注意**：自签名证书会在浏览器中显示安全警告，仅用于开发/测试环境。
@@ -236,14 +236,14 @@ Unix socket 比 TCP socket 性能更好：
 **修改 Gunicorn 配置** (`gunicorn.conf.py`)：
 
 ```python
-bind = 'unix:/opt/feishu-bot/gunicorn.sock'
+bind = 'unix:/opt/xagent/gunicorn.sock'
 ```
 
 **修改 Nginx 配置**：
 
 ```nginx
-upstream feishu_bot_backend {
-    server unix:/opt/feishu-bot/gunicorn.sock fail_timeout=0;
+upstream xagent_backend {
+    server unix:/opt/xagent/gunicorn.sock fail_timeout=0;
 }
 ```
 
@@ -251,7 +251,7 @@ upstream feishu_bot_backend {
 
 ```bash
 # 确保 Nginx 用户可以访问 socket
-sudo chown www-data:www-data /opt/feishu-bot/gunicorn.sock
+sudo chown www-data:www-data /opt/xagent/gunicorn.sock
 ```
 
 ### 3. 调整 Worker 连接数
@@ -368,10 +368,10 @@ sudo apt-get upgrade nginx
 
 ```bash
 # 实时查看访问日志
-sudo tail -f /var/log/nginx/feishu-bot-web-admin-access.log
+sudo tail -f /var/log/nginx/xagent-web-admin-access.log
 
 # 查看错误日志
-sudo tail -f /var/log/nginx/feishu-bot-web-admin-error.log
+sudo tail -f /var/log/nginx/xagent-web-admin-error.log
 ```
 
 ### 2. 日志轮转
@@ -412,7 +412,7 @@ curl http://localhost/nginx_status
 
 1. 检查 Gunicorn 是否运行：
    ```bash
-   sudo systemctl status feishu-bot-web-admin
+   sudo systemctl status xagent-web-admin
    ```
 
 2. 检查端口是否监听：
@@ -438,13 +438,13 @@ curl http://localhost/nginx_status
 
 1. 检查文件权限：
    ```bash
-   ls -la /opt/feishu-bot/frontend/dist/
+   ls -la /opt/xagent/frontend/dist/
    ```
 
 2. 确保 Nginx 用户有读取权限：
    ```bash
-   sudo chown -R www-data:www-data /opt/feishu-bot/frontend/dist/
-   sudo chmod -R 755 /opt/feishu-bot/frontend/dist/
+   sudo chown -R www-data:www-data /opt/xagent/frontend/dist/
+   sudo chmod -R 755 /opt/xagent/frontend/dist/
    ```
 
 3. 检查 SELinux（CentOS/RHEL）：
@@ -482,17 +482,17 @@ curl http://localhost/nginx_status
 
 1. 确认前端已构建：
    ```bash
-   ls -la /opt/feishu-bot/frontend/dist/
+   ls -la /opt/xagent/frontend/dist/
    ```
 
 2. 检查 Nginx 配置中的 root 路径：
    ```bash
-   sudo grep "root" /etc/nginx/sites-available/feishu-bot-web-admin
+   sudo grep "root" /etc/nginx/sites-available/xagent-web-admin
    ```
 
 3. 重新构建前端：
    ```bash
-   cd /opt/feishu-bot/frontend
+   cd /opt/xagent/frontend
    npm run build
    ```
 

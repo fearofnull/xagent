@@ -196,7 +196,7 @@ python -m pytest tests/test_frontend_backend_integration.py::TestAPIContract::te
 运行测试覆盖率分析：
 
 ```bash
-python -m pytest tests/test_frontend_backend_integration.py --cov=feishu_bot.web_admin --cov-report=term-missing
+python -m pytest tests/test_frontend_backend_integration.py --cov=xagent.web_admin --cov-report=term-missing
 ```
 
 覆盖率结果：

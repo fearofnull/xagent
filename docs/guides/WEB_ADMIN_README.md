@@ -1,10 +1,10 @@
-# 飞书 AI Bot Web 管理界面
+# XAgent Web 管理界面
 
-一个美观、易用的 Web 管理界面，用于可视化管理飞书 AI Bot 的会话配置。提供比命令行和飞书消息命令更友好的配置管理体验。
+一个美观、易用的 Web 管理界面，用于可视化管理XAgent的会话配置。提供比命令行和消息命令更友好的配置管理体验。
 
 ## 功能介绍
 
-Web 管理界面是飞书 AI Bot 的可视化配置管理工具，让你可以通过浏览器轻松管理所有会话的配置。
+Web 管理界面是XAgent的可视化配置管理工具，让你可以通过浏览器轻松管理所有会话的配置。
 
 ### 核心功能
 
@@ -45,7 +45,7 @@ Web 管理界面可以管理以下配置项：
 
 - **default_cli_provider**: CLI 层专用提供商（claude、gemini 或空）
 
-这些配置项与飞书消息命令（如 `/setdir`、`/lang`、`/provider` 等）完全对应。
+这些配置项与消息命令（如 `/setdir`、`/lang`、`/provider` 等）完全对应。
 
 ## 安装和启动说明
 
@@ -53,7 +53,7 @@ Web 管理界面可以管理以下配置项：
 
 - **Python 3.8+**: 后端运行环境
 - **Node.js 16+** 和 **npm**: 前端开发和构建（仅开发模式需要）
-- **飞书 AI Bot**: 已配置并运行的飞书机器人
+- **XAgent**: 已配置并运行的XAgent系统
 
 ### 快速开始
 
@@ -100,10 +100,10 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 ```bash
 # 直接启动后端服务器（默认端口 5000）
-python -m feishu_bot.web_admin.server
+python -m xagent.web_admin.server
 
 # 或指定端口
-python -m feishu_bot.web_admin.server --port 8080
+python -m xagent.web_admin.server --port 8080
 ```
 
 访问 http://localhost:5000 即可使用管理界面。
@@ -112,7 +112,7 @@ python -m feishu_bot.web_admin.server --port 8080
 
 ```bash
 # 终端 1: 启动后端服务器（默认端口 5000）
-python -m feishu_bot.web_admin.server
+python -m xagent.web_admin.server
 
 # 终端 2: 启动前端开发服务器（默认端口 5173）
 cd frontend
@@ -127,7 +127,7 @@ npm run dev
 后端服务器支持以下命令行参数：
 
 ```bash
-python -m feishu_bot.web_admin.server [选项]
+python -m xagent.web_admin.server [选项]
 
 选项：
   --host HOST          监听地址（默认：0.0.0.0）
@@ -139,13 +139,13 @@ python -m feishu_bot.web_admin.server [选项]
 示例：
 ```bash
 # 在 8080 端口启动
-python -m feishu_bot.web_admin.server --port 8080
+python -m xagent.web_admin.server --port 8080
 
 # 仅监听本地连接
-python -m feishu_bot.web_admin.server --host 127.0.0.1
+python -m xagent.web_admin.server --host 127.0.0.1
 
 # 启用调试模式
-python -m feishu_bot.web_admin.server --debug
+python -m xagent.web_admin.server --debug
 ```
 
 ### 验证安装
@@ -581,7 +581,7 @@ OPENAI_API_KEY=your_openai_api_key
    - API 接口：每分钟最多 60 次请求
    - 导出/导入：每分钟最多 10 次操作
    - 如需禁用（不推荐）：使用 `--disable-rate-limiting` 参数
-   - 详细配置参见 `feishu_bot/web_admin/RATE_LIMITING.md`
+   - 详细配置参见 `xagent/web_admin/RATE_LIMITING.md`
 
 8. **定期更新**：
    - 定期更新依赖包
@@ -672,7 +672,7 @@ OPENAI_API_KEY=your_openai_api_key
 
 #### 1. 无法启动后端服务器
 
-**问题**：运行 `python -m feishu_bot.web_admin.server` 时报错
+**问题**：运行 `python -m xagent.web_admin.server` 时报错
 
 **可能原因**：
 - 缺少环境变量配置
@@ -754,7 +754,7 @@ LOG_LEVEL=DEBUG
 export LOG_LEVEL=DEBUG  # Linux/Mac
 set LOG_LEVEL=DEBUG     # Windows
 
-python -m feishu_bot.web_admin.server --debug
+python -m xagent.web_admin.server --debug
 ```
 
 日志文件位置：
@@ -789,7 +789,7 @@ cd ..
 pip install gunicorn
 
 # 3. 启动服务
-gunicorn -w 4 -b 0.0.0.0:5000 feishu_bot.web_admin.server:app
+gunicorn -w 4 -b 0.0.0.0:5000 xagent.web_admin.server:app
 ```
 
 #### 使用 Nginx 反向代理
@@ -835,19 +835,19 @@ sudo certbot renew --dry-run
 
 #### 使用 Systemd 管理服务
 
-创建服务文件 `/etc/systemd/system/feishu-web-admin.service`:
+创建服务文件 `/etc/systemd/system/xagent-web-admin.service`:
 
 ```ini
 [Unit]
-Description=Feishu AI Bot Web Admin Interface
+Description=XAgent Web Admin Interface
 After=network.target
 
 [Service]
 Type=simple
 User=your-user
-WorkingDirectory=/path/to/feishu-ai-bot
+WorkingDirectory=/path/to/xagent
 Environment="PATH=/path/to/venv/bin"
-ExecStart=/path/to/venv/bin/gunicorn -w 4 -b 127.0.0.1:5000 feishu_bot.web_admin.server:app
+ExecStart=/path/to/venv/bin/gunicorn -w 4 -b 127.0.0.1:5000 src.xagent.web_admin.server:app
 Restart=always
 RestartSec=10
 
@@ -858,16 +858,16 @@ WantedBy=multi-user.target
 管理服务：
 ```bash
 # 启动服务
-sudo systemctl start feishu-web-admin
+sudo systemctl start xagent-web-admin
 
 # 设置开机自启
-sudo systemctl enable feishu-web-admin
+sudo systemctl enable xagent-web-admin
 
 # 查看状态
-sudo systemctl status feishu-web-admin
+sudo systemctl status xagent-web-admin
 
 # 查看日志
-sudo journalctl -u feishu-web-admin -f
+sudo journalctl -u xagent-web-admin -f
 ```
 
 ## 技术栈
@@ -921,14 +921,14 @@ pytest tests/test_backend_performance.py -v
 
 ### 详细文档
 
-查看完整的性能优化文档：`feishu_bot/web_admin/PERFORMANCE.md`
+查看完整的性能优化文档：`xagent/web_admin/PERFORMANCE.md`
 
 ## 相关文档
 
 - **需求文档**: `.kiro/specs/web-admin-interface/requirements.md`
 - **设计文档**: `.kiro/specs/web-admin-interface/design.md`
 - **任务列表**: `.kiro/specs/web-admin-interface/tasks.md`
-- **性能优化**: `feishu_bot/web_admin/PERFORMANCE.md`
+- **性能优化**: `xagent/web_admin/PERFORMANCE.md`
 - **测试覆盖率**: `WEB_ADMIN_TEST_COVERAGE_SUMMARY.md`
 - **主项目文档**: `README.md`
 - **配置指南**: `docs/CONFIGURATION.md`
