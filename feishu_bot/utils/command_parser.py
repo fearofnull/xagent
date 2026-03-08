@@ -21,6 +21,14 @@ class CommandParser:
     PREFIX_MAPPING = {
         # Unified API (routes through UnifiedAPIInterface) - 统一API入口
         "@gpt": ("unified", "api"),
+        # Agent
+        "@agent": ("agent", "api"),
+        # OpenAI API
+        "@openai-api": ("openai", "api"),
+        # Claude API
+        "@claude-api": ("claude", "api"),
+        # Gemini API
+        "@gemini-api": ("gemini", "api"),
         # Claude CLI
         "@claude-cli": ("claude", "cli"),
         "@code": ("claude", "cli"),

@@ -4,7 +4,7 @@
 根据解析的命令和消息内容，决定使用哪个 AI 执行器
 """
 import logging
-from typing import Optional
+from typing import Optional, Any
 
 from feishu_bot.models import ParsedCommand
 from feishu_bot.core.executor_registry import ExecutorRegistry, ExecutorNotAvailableError, AIExecutor
@@ -27,17 +27,20 @@ class SmartRouter:
     def __init__(
         self,
         executor_registry: ExecutorRegistry,
-        unified_api_interface: Optional[AIExecutor] = None
+        unified_api_interface: Optional[AIExecutor] = None,
+        bot_config: Optional[Any] = None
     ):
         """初始化智能路由器
         
         Args:
             executor_registry: 执行器注册表
             unified_api_interface: 统一API接口实例（必需）
+            bot_config: 机器人配置对象
         """
         self.executor_registry = executor_registry
         self.command_parser = CommandParser()
         self.unified_api_interface = unified_api_interface
+        self.bot_config = bot_config
         
         logger.info(
             f"SmartRouter initialized with "
@@ -59,6 +62,33 @@ class SmartRouter:
         provider = parsed_command.provider
         layer = parsed_command.execution_layer
         message_preview = parsed_command.message[:50] + "..." if len(parsed_command.message) > 50 else parsed_command.message
+        
+        # 特殊处理：如果provider是"agent"，使用Agent执行器
+        if provider == "agent":
+            # 检查Agent功能是否启用
+            if hasattr(self.bot_config, 'agent_enabled') and not self.bot_config.agent_enabled:
+                logger.info("[ROUTING] Agent functionality is disabled")
+                raise ExecutorNotAvailableError(
+                    "agent",
+                    "agent",
+                    "Agent 功能已被管理员禁用。"
+                )
+            
+            logger.info("[ROUTING] Using Agent executor for @agent command")
+            logger.debug(f"[ROUTING] Message: '{message_preview}'")
+            try:
+                executor = self.get_executor("agent", "agent")
+                logger.info("[ROUTING] ✅ Using agent/agent (explicit)")
+                return executor
+            except ExecutorNotAvailableError as e:
+                logger.error(
+                    f"[ROUTING] ❌ Agent executor not available: {e.reason}"
+                )
+                raise ExecutorNotAvailableError(
+                    "agent",
+                    "agent",
+                    f"Agent 执行器不可用: {e.reason}\n\n请检查配置。"
+                )
         
         # 特殊处理：如果provider是"unified"，使用统一API接口
         if provider == "unified":

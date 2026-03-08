@@ -109,9 +109,10 @@ class ProviderConfigManager:
         if config.default_model not in config.models:
             return False, f"default_model '{config.default_model}' 必须在models列表中"
         
-        # 保留创建时间，更新修改时间
+        # 保留创建时间和默认状态，更新修改时间
         old_config = self.configs[name]
         config.created_at = old_config.created_at
+        config.is_default = old_config.is_default
         config.updated_at = datetime.now().astimezone().replace(microsecond=0).isoformat()
         
         # 如果名称改变，删除旧名称的配置

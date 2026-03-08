@@ -10,6 +10,13 @@ import time
 from threading import Thread
 from typing import Optional
 
+# 加载 .env 文件
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    logging.warning("dotenv module not installed, using environment variables directly")
+
 # 配置 SSL 证书
 from feishu_bot.utils.ssl_config import configure_ssl
 configure_ssl()

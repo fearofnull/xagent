@@ -132,6 +132,26 @@
               <span class="field-description">CLI 层级使用的默认提供商 (可选)</span>
             </div>
           </el-descriptions-item>
+
+          <!-- XAgent 功能 -->
+          <el-descriptions-item>
+            <template #label>
+              <div class="label-content">
+                <el-icon><Operation /></el-icon>
+                <span>XAgent 功能</span>
+              </div>
+            </template>
+            <div class="value-content">
+              <el-tag 
+                :type="globalConfig.agent_enabled ? 'success' : 'danger'" 
+                effect="plain" 
+                size="large"
+              >
+                {{ globalConfig.agent_enabled ? '已启用' : '已禁用' }}
+              </el-tag>
+              <span class="field-description">是否启用 XAgent 智能助手功能</span>
+            </div>
+          </el-descriptions-item>
         </el-descriptions>
 
         <!-- Edit Mode -->
@@ -184,6 +204,16 @@
             </el-select>
             <div class="form-item-tip">CLI 层级使用的默认提供商（可选）</div>
           </el-form-item>
+
+          <!-- XAgent 功能 -->
+          <el-form-item label="XAgent 功能">
+            <el-switch 
+              v-model="editForm.agent_enabled" 
+              active-text="启用" 
+              inactive-text="禁用"
+            />
+            <div class="form-item-tip">是否启用 XAgent 智能助手功能</div>
+          </el-form-item>
         </el-form>
       </el-card>
 
@@ -231,7 +261,8 @@ const saving = ref(false)
 const editForm = ref({
   target_project_dir: '',
   response_language: '',
-    default_cli_provider: ''
+  default_cli_provider: '',
+  agent_enabled: true
 })
 
 // Get provider tag type
@@ -266,7 +297,8 @@ const startEdit = () => {
   editForm.value = {
     target_project_dir: globalConfig.value.target_project_dir || '',
     response_language: globalConfig.value.response_language || '',
-        default_cli_provider: globalConfig.value.default_cli_provider || ''
+    default_cli_provider: globalConfig.value.default_cli_provider || '',
+    agent_enabled: globalConfig.value.agent_enabled !== undefined ? globalConfig.value.agent_enabled : true
   }
   isEditing.value = true
 }
@@ -277,7 +309,8 @@ const cancelEdit = () => {
   editForm.value = {
     target_project_dir: '',
     response_language: '',
-        default_cli_provider: ''
+    default_cli_provider: '',
+    agent_enabled: true
   }
 }
 
@@ -290,7 +323,8 @@ const saveConfig = async () => {
     const data = {
       target_project_dir: editForm.value.target_project_dir || null,
       response_language: editForm.value.response_language || null,
-            default_cli_provider: editForm.value.default_cli_provider || null
+      default_cli_provider: editForm.value.default_cli_provider || null,
+      agent_enabled: editForm.value.agent_enabled
     }
     
     const response = await configAPI.updateGlobalConfig(data)

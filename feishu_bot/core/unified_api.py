@@ -162,8 +162,8 @@ class UnifiedAPIInterface(AIExecutor):
         
         根据配置的type字段选择对应的执行器：
         - openai_compatible: 使用OpenAI兼容执行器
-        - claude_compatible: 预留，暂不支持
-        - gemini_compatible: 预留，暂不支持
+        - claude_compatible: 使用Claude执行器
+        - gemini_compatible: 使用Gemini执行器
         
         Args:
             config: 提供商配置
@@ -183,19 +183,21 @@ class UnifiedAPIInterface(AIExecutor):
             )
         
         elif config.type == "claude_compatible":
-            # Claude兼容类型预留
-            raise ExecutorNotAvailableError(
-                provider=config.name,
-                layer="api",
-                reason="Claude兼容类型暂未实现"
+            # 使用Claude执行器
+            from feishu_bot.executors.claude_api_executor import ClaudeAPIExecutor
+            return ClaudeAPIExecutor(
+                api_key=config.api_key,
+                model=config.default_model,
+                base_url=config.base_url
             )
         
         elif config.type == "gemini_compatible":
-            # Gemini兼容类型预留
-            raise ExecutorNotAvailableError(
-                provider=config.name,
-                layer="api",
-                reason="Gemini兼容类型暂未实现"
+            # 使用Gemini执行器
+            from feishu_bot.executors.gemini_api_executor import GeminiAPIExecutor
+            return GeminiAPIExecutor(
+                api_key=config.api_key,
+                model=config.default_model,
+                base_url=config.base_url
             )
         
         else:

@@ -82,3 +82,12 @@ feishu_bot/web_admin/static/
 *.jpg
 *.jpeg
 *.gif
+
+# 研究分析文档（包含项目分析，不需要提交到仓库）
+docs/research/
+
+# Trae IDE files
+.trae/
+
+# Reference project (not needed in final repo)
+CoPaw/

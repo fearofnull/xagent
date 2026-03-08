@@ -5,6 +5,7 @@ import asyncio
 import logging
 import json
 import threading
+import os
 from typing import Optional
 from lark_oapi import Client as LarkClient
 from lark_oapi.api.im.v1 import P2ImMessageReceiveV1
@@ -24,6 +25,9 @@ from .core.websocket_client import WebSocketClient
 
 # API Executors
 from .executors.openai_api_executor import OpenAIAPIExecutor
+from .executors.claude_api_executor import ClaudeAPIExecutor
+from .executors.gemini_api_executor import GeminiAPIExecutor
+from .executors.agent_executor import AgentExecutor
 
 # CLI Executors
 from .executors.claude_cli_executor import ClaudeCodeCLIExecutor
@@ -89,7 +93,8 @@ class FeishuBot:
         # 初始化智能路由器
         self.smart_router = SmartRouter(
             executor_registry=self.executor_registry,
-            unified_api_interface=self.unified_api_interface
+            unified_api_interface=self.unified_api_interface,
+            bot_config=self.config
         )
         
         # 初始化事件处理器和 WebSocket 客户端
@@ -191,6 +196,110 @@ class FeishuBot:
                 logger.info(f"Registered Qwen Code CLI executor (target: {qwen_cli_dir})")
             except Exception as e:
                 logger.warning(f"Failed to register Qwen Code CLI executor: {e}")
+        
+        # 注册 OpenAI API 执行器
+        try:
+            openai_api_key = os.environ.get("OPENAI_API_KEY")
+            if openai_api_key:
+                openai_executor = OpenAIAPIExecutor(
+                    api_key=openai_api_key,
+                    timeout=self.config.ai_timeout
+                )
+                openai_metadata = ExecutorMetadata(
+                    name="OpenAI API",
+                    provider="openai",
+                    layer="api",
+                    version="1.0.0",
+                    description="OpenAI API for text generation",
+                    capabilities=["text_generation"],
+                    command_prefixes=["@openai-api"],
+                    priority=1,
+                    config_required=["openai_api_key"]
+                )
+                self.executor_registry.register_api_executor(
+                    "openai", openai_executor, openai_metadata
+                )
+                logger.info("Registered OpenAI API executor")
+        except Exception as e:
+            logger.warning(f"Failed to register OpenAI API executor: {e}")
+        
+        # 注册 Claude API 执行器
+        try:
+            claude_api_key = os.environ.get("ANTHROPIC_API_KEY")
+            if claude_api_key:
+                claude_executor = ClaudeAPIExecutor(
+                    api_key=claude_api_key,
+                    timeout=self.config.ai_timeout
+                )
+                claude_metadata = ExecutorMetadata(
+                    name="Claude API",
+                    provider="claude",
+                    layer="api",
+                    version="1.0.0",
+                    description="Claude API for text generation",
+                    capabilities=["text_generation"],
+                    command_prefixes=["@claude-api"],
+                    priority=2,
+                    config_required=["anthropic_api_key"]
+                )
+                self.executor_registry.register_api_executor(
+                    "claude", claude_executor, claude_metadata
+                )
+                logger.info("Registered Claude API executor")
+        except Exception as e:
+            logger.warning(f"Failed to register Claude API executor: {e}")
+        
+        # 注册 Gemini API 执行器
+        try:
+            gemini_api_key = os.environ.get("GEMINI_API_KEY")
+            if gemini_api_key:
+                gemini_executor = GeminiAPIExecutor(
+                    api_key=gemini_api_key,
+                    timeout=self.config.ai_timeout
+                )
+                gemini_metadata = ExecutorMetadata(
+                    name="Gemini API",
+                    provider="gemini",
+                    layer="api",
+                    version="1.0.0",
+                    description="Gemini API for text generation",
+                    capabilities=["text_generation"],
+                    command_prefixes=["@gemini-api"],
+                    priority=3,
+                    config_required=["gemini_api_key"]
+                )
+                self.executor_registry.register_api_executor(
+                    "gemini", gemini_executor, gemini_metadata
+                )
+                logger.info("Registered Gemini API executor")
+        except Exception as e:
+            logger.warning(f"Failed to register Gemini API executor: {e}")
+        
+        # 注册 Agent 执行器
+        try:
+            search_api_key = os.environ.get("SERPER_API_KEY")
+            agent_executor = AgentExecutor(
+                timeout=self.config.ai_timeout,
+                search_api_key=search_api_key,
+                provider_config_manager=self.provider_config_manager
+            )
+            agent_metadata = ExecutorMetadata(
+                name="Agent",
+                provider="agent",
+                layer="agent",
+                version="1.0.0",
+                description="Agent with tool calling capabilities",
+                capabilities=["tool_calling", "multi_step_reasoning", "file_operations", "web_search", "shell_commands"],
+                command_prefixes=["@agent"],
+                priority=0,
+                config_required=["openai_api_key"]
+            )
+            self.executor_registry.register_agent_executor(
+                "agent", agent_executor, agent_metadata
+            )
+            logger.info("Registered Agent executor")
+        except Exception as e:
+            logger.warning(f"Failed to register Agent executor: {e}")
     
     def _handle_message_receive(self, data: P2ImMessageReceiveV1) -> None:
         """处理接收到的消息
@@ -202,7 +311,14 @@ class FeishuBot:
             message_id = data.event.message.message_id
             chat_id = data.event.message.chat_id
             chat_type = data.event.message.chat_type
-            sender_id = data.event.sender.sender_id.user_id
+            
+            # 安全获取sender_id，处理可能为None的情况
+            sender_id = None
+            try:
+                if hasattr(data.event, 'sender') and hasattr(data.event.sender, 'sender_id'):
+                    sender_id = data.event.sender.sender_id.user_id
+            except Exception as e:
+                logger.warning(f"Failed to get sender_id: {e}")
             
             logger.info(f"Received message {message_id} from user {sender_id}")
             
@@ -282,8 +398,14 @@ class FeishuBot:
             logger.info(f"Final message to be sent to executor (first 200 chars): {final_message[:200]}")
             
             # 5. 确定会话 ID（私聊用 user_id，群聊用 chat_id）
-            session_id = sender_id if chat_type == "p2p" else chat_id
-            session_type = "user" if chat_type == "p2p" else "group"
+            # 处理 sender_id 为 None 的情况
+            if sender_id is None:
+                # 对于没有 user_id 的情况，使用 chat_id 作为会话 ID
+                session_id = chat_id
+                session_type = "group"  # 默认为群聊类型
+            else:
+                session_id = sender_id if chat_type == "p2p" else chat_id
+                session_type = "user" if chat_type == "p2p" else "group"
             
             # 6. 配置命令检查
             if self._handle_config_command(

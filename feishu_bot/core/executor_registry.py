@@ -57,16 +57,17 @@ class ExecutorRegistry:
     
     def __init__(self, config_path: Optional[str] = None):
         """初始化执行器注册表
-        
+
         Args:
             config_path: 配置文件路径（可选）
         """
         self.api_executors: Dict[str, AIExecutor] = {}
         self.cli_executors: Dict[str, AIExecutor] = {}
+        self.agent_executors: Dict[str, AIExecutor] = {}
         self.executor_metadata: Dict[str, ExecutorMetadata] = {}
         self._availability_cache: Dict[str, bool] = {}
         self.config_path = config_path
-        
+
         # 如果提供了配置文件路径，加载配置
         if config_path and os.path.exists(config_path):
             self._load_from_config(config_path)
@@ -100,37 +101,70 @@ class ExecutorRegistry:
         metadata: Optional[ExecutorMetadata] = None
     ) -> None:
         """注册 CLI 执行器
-        
+
         Args:
             provider: 提供商名称（如 "claude", "gemini"）
             executor: 执行器实例
             metadata: 执行器元数据（可选）
         """
         self.cli_executors[provider] = executor
-        
+
         if metadata:
             key = f"{provider}_cli"
             self.executor_metadata[key] = metadata
             logger.info(f"Registered CLI executor: {provider} - {metadata.name}")
         else:
             logger.info(f"Registered CLI executor: {provider}")
+
+    def register_agent_executor(
+        self,
+        provider: str,
+        executor: AIExecutor,
+        metadata: Optional[ExecutorMetadata] = None
+    ) -> None:
+        """注册 Agent 执行器
+
+        Args:
+            provider: 提供商名称（如 "agent"）
+            executor: 执行器实例
+            metadata: 执行器元数据（可选）
+        """
+        self.agent_executors[provider] = executor
+
+        if metadata:
+            key = f"{provider}_agent"
+            self.executor_metadata[key] = metadata
+            logger.info(f"Registered Agent executor: {provider} - {metadata.name}")
+        else:
+            logger.info(f"Registered Agent executor: {provider}")
     
     def get_executor(self, provider: str, layer: str) -> AIExecutor:
         """获取指定提供商和层的执行器
-        
+
         Args:
             provider: 提供商名称
-            layer: 执行层（"api" 或 "cli"）
-            
+            layer: 执行层（"api", "cli" 或 "agent"）
+
         Returns:
             执行器实例
-            
+
         Raises:
             ExecutorNotAvailableError: 如果执行器不可用
         """
         # 选择对应的执行器字典
-        executors = self.api_executors if layer == "api" else self.cli_executors
-        
+        if layer == "api":
+            executors = self.api_executors
+        elif layer == "cli":
+            executors = self.cli_executors
+        elif layer == "agent":
+            executors = self.agent_executors
+        else:
+            raise ExecutorNotAvailableError(
+                provider,
+                layer,
+                f"Invalid execution layer: {layer}"
+            )
+
         # 检查执行器是否存在
         if provider not in executors:
             raise ExecutorNotAvailableError(
@@ -138,53 +172,59 @@ class ExecutorRegistry:
                 layer,
                 f"Executor not registered"
             )
-        
+
         executor = executors[provider]
-        
+
         # 检查执行器是否可用（使用缓存）
         cache_key = f"{provider}_{layer}"
         if cache_key not in self._availability_cache:
             self._availability_cache[cache_key] = executor.is_available()
-        
+
         if not self._availability_cache[cache_key]:
             # 获取不可用原因
             reason = self._get_unavailability_reason(provider, layer, executor)
             raise ExecutorNotAvailableError(provider, layer, reason)
-        
+
         return executor
     
     def list_available_executors(self, layer: Optional[str] = None) -> List[str]:
         """列出所有可用的执行器
-        
+
         Args:
-            layer: 执行层过滤（"api" 或 "cli"），None 表示列出所有
-            
+            layer: 执行层过滤（"api", "cli" 或 "agent"），None 表示列出所有
+
         Returns:
             可用执行器的提供商名称列表
         """
         available = []
-        
+
         # 检查 API 执行器
         if layer is None or layer == "api":
             for provider, executor in self.api_executors.items():
                 if self.is_executor_available(provider, "api"):
                     available.append(f"{provider}/api")
-        
+
         # 检查 CLI 执行器
         if layer is None or layer == "cli":
             for provider, executor in self.cli_executors.items():
                 if self.is_executor_available(provider, "cli"):
                     available.append(f"{provider}/cli")
-        
+
+        # 检查 Agent 执行器
+        if layer is None or layer == "agent":
+            for provider, executor in self.agent_executors.items():
+                if self.is_executor_available(provider, "agent"):
+                    available.append(f"{provider}/agent")
+
         return available
     
     def get_executor_metadata(self, provider: str, layer: str) -> Optional[ExecutorMetadata]:
         """获取执行器元数据
-        
+
         Args:
             provider: 提供商名称
-            layer: 执行层
-            
+            layer: 执行层（"api", "cli" 或 "agent"）
+
         Returns:
             执行器元数据，如果不存在则返回 None
         """

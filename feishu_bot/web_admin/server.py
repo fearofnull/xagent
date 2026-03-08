@@ -118,10 +118,13 @@ class WebAdminServer:
         )
         
         # Determine static folder path
-        if static_folder is None:
+        if static_folder is None or static_folder == '':
             # Default to static folder in the same directory as this module
             module_dir = os.path.dirname(os.path.abspath(__file__))
             static_folder = os.path.join(module_dir, 'static')
+        else:
+            # Convert relative path to absolute path
+            static_folder = os.path.abspath(static_folder)
         
         # Configure static file serving if folder exists
         if os.path.exists(static_folder):
@@ -129,6 +132,12 @@ class WebAdminServer:
             logger.info(f"Serving static files from: {static_folder}")
         else:
             logger.warning(f"Static folder not found: {static_folder}")
+            
+            # Add a default route to handle all requests when static folder doesn't exist
+            @self.app.route('/', defaults={'path': ''})
+            @self.app.route('/<path:path>')
+            def default_route(path):
+                return "<h1>Web Admin Interface</h1><p>Static files not found. Please build the frontend first.</p>", 200
         
         logger.info(f"Web Admin Server initialized on {host}:{port}")
     

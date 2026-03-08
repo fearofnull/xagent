@@ -6,6 +6,7 @@
 
 - 🤖 **统一 API 接口**: 通过 Web 管理界面配置任意 AI 提供商，使用 `@gpt` 统一调用
 - 🔧 **CLI 代码工具**: Claude CLI、Gemini CLI、Qwen CLI，支持代码分析和文件操作
+- 🤖 **XAgent 智能助手**: 具备工具调用、多步骤推理、文件操作、网络搜索等能力
 - 🔀 **智能路由**: 自动识别意图，选择合适的执行方式
 - 💬 **会话管理**: 上下文连续对话，自动管理会话历史
 - 🎨 **Web 管理界面**: 可视化配置 AI 提供商、会话设置、全局配置
@@ -14,10 +15,11 @@
 
 ## 🏗️ 系统架构
 
-系统采用统一 API + CLI 工具的架构设计：
+系统采用统一 API + CLI 工具 + XAgent 的架构设计：
 
 - **统一 API 接口**: 通过 Web 管理界面配置 AI 提供商，使用 `@gpt` 命令统一调用
 - **CLI 工具集**: Claude CLI、Gemini CLI、Qwen CLI，支持代码分析和文件操作
+- **XAgent 智能助手**: 具备工具调用、多步骤推理、文件操作、网络搜索等能力
 - **智能路由**: 根据命令前缀和消息内容自动选择执行方式
 - **Web 管理界面**: 可视化配置提供商、会话、全局设置
 
@@ -80,6 +82,11 @@ ENABLE_WEB_ADMIN=true
 WEB_ADMIN_PORT=8080
 WEB_ADMIN_PASSWORD=your_secure_password
 JWT_SECRET_KEY=your_random_secret_key
+
+# XAgent 配置（可选）
+# Serper API Key（用于 XAgent 的网络搜索功能）
+# 注册地址：https://serper.dev/
+SERPER_API_KEY=your_serper_api_key
 ```
 
 ### 配置 AI 提供商
@@ -110,6 +117,13 @@ JWT_SECRET_KEY=your_random_secret_key
 @机器人 @claude-cli 分析项目架构
 @机器人 @gemini-cli 检查代码质量
 @机器人 @qwen-cli 优化这段代码
+```
+
+### XAgent 智能助手
+```
+@机器人 @agent 查看今天的热点新闻
+@机器人 @agent 搜索最新的 Python 3.12 特性
+@机器人 @agent 读取并分析项目中的 README.md 文件
 ```
 
 ### 会话管理

@@ -367,7 +367,7 @@ class SessionManager:
         except Exception as e:
             logger.error(f"Failed to archive session {session.session_id}: {e}")
     
-    def _sanitize_filename(self, filename: str) -> str:
+    def _sanitize_filename(self, filename: Optional[str]) -> str:
         """清理文件名中的非法字符
         
         Args:
@@ -376,6 +376,10 @@ class SessionManager:
         Returns:
             清理后的文件名
         """
+        # 处理None值
+        if filename is None:
+            return "null"
+        
         # Windows 和 Unix 系统中的非法文件名字符
         invalid_chars = '<>:"/\\|?*\x00'
         # 替换非法字符为下划线

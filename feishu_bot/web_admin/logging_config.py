@@ -30,7 +30,7 @@ def configure_logging(
     """
     # Create log directory if needed
     if enable_file_logging:
-        if log_dir is None:
+        if log_dir is None or log_dir == '':
             log_dir = os.path.join(os.getcwd(), "logs")
         os.makedirs(log_dir, exist_ok=True)
     

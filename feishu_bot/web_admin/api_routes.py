@@ -407,16 +407,16 @@ def register_api_routes(
                 global_config = {
                     'target_project_dir': config_manager.global_config.target_directory or "",
                     'response_language': config_manager.global_config.response_language,
-
-                    'default_cli_provider': config_manager.global_config.default_cli_provider
+                    'default_cli_provider': config_manager.global_config.default_cli_provider,
+                    'agent_enabled': config_manager.global_config.agent_enabled
                 }
             else:
                 # Return default values if no global config
                 global_config = {
                     'target_project_dir': "",
                     'response_language': None,
-
-                    'default_cli_provider': None
+                    'default_cli_provider': None,
+                    'agent_enabled': True
                 }
             
             return jsonify({
@@ -478,6 +478,7 @@ def register_api_routes(
             
             # Validate layer values
             
+            env_path = Path('.env')
             if not env_path.exists():
                 return jsonify({
                     'success': False,
@@ -520,6 +521,10 @@ def register_api_routes(
                         value = data['default_cli_provider'] or ''
                         updated_lines.append(f'{key}={value}\n')
                         updated_keys.add('default_cli_provider')
+                    elif key == 'AGENT_ENABLED' and 'agent_enabled' in data:
+                        value = 'true' if data['agent_enabled'] else 'false'
+                        updated_lines.append(f'{key}={value}\n')
+                        updated_keys.add('agent_enabled')
                     else:
                         updated_lines.append(line)
                 else:
@@ -535,7 +540,9 @@ def register_api_routes(
                     config_manager.global_config.target_directory = data['target_project_dir'] or None
                 if 'response_language' in data:
                     config_manager.global_config.response_language = data['response_language'] or None
-                
+                if 'agent_enabled' in data:
+                    config_manager.global_config.agent_enabled = data['agent_enabled']
+            
             if 'default_cli_provider' in data:
                 cli_provider = data['default_cli_provider'] if data['default_cli_provider'] else None
                 if cli_provider and cli_provider not in config_manager.VALID_PROVIDERS:
@@ -550,81 +557,32 @@ def register_api_routes(
             
             # Validate layer values
             
-            if session_id not in config_manager.configs:
-                from feishu_bot.models import SessionConfig
-                config_manager.configs[session_id] = SessionConfig(
-                    session_id=session_id,
-                    session_type=session_type,
-                    target_project_dir=None,
-                    response_language=None,
-                    default_cli_provider=None,
-                    created_by=user_id,
-                    created_at=config_manager._get_timestamp(),
-                    updated_by=user_id,
-                    updated_at=config_manager._get_timestamp(),
-                    update_count=0
-                )
-            
-            config = config_manager.configs[session_id]
-            
-            # Update configuration fields
-            if 'target_project_dir' in data:
-                config.target_project_dir = data['target_project_dir'] if data['target_project_dir'] else None
-            if 'response_language' in data:
-                config.response_language = data['response_language'] if data['response_language'] else None
-            
-            if 'default_cli_provider' in data:
-                config.default_cli_provider = data['default_cli_provider'] if data['default_cli_provider'] else None
-            
-            # Update metadata
-            config.updated_by = user_id
-            config.updated_at = config_manager._get_timestamp()
-            config.update_count += 1
-            
-            # Save configuration
-            config_manager.save_configs()
-            
             # Log configuration change
             changes = {}
             if 'target_project_dir' in data:
                 changes['target_project_dir'] = data['target_project_dir']
             if 'response_language' in data:
                 changes['response_language'] = data['response_language']
-            
             if 'default_cli_provider' in data:
                 changes['default_cli_provider'] = data['default_cli_provider']
+            if 'agent_enabled' in data:
+                changes['agent_enabled'] = data['agent_enabled']
             
-            log_config_change(
-                session_id=session_id,
-                action='update',
-                user=user_id,
-                changes=changes
-            )
-            
-            # Return updated configuration
-            config_dict = {
-                'session_id': config.session_id,
-                'session_type': config.session_type,
-                'config': {
-                    'target_project_dir': config.target_project_dir,
-                    'response_language': config.response_language,
-
-                    'default_cli_provider': config.default_cli_provider
-                },
-                'metadata': {
-                    'created_by': config.created_by,
-                    'created_at': config.created_at,
-                    'updated_by': config.updated_by,
-                    'updated_at': config.updated_at,
-                    'update_count': config.update_count
-                }
+            # Return updated global configuration
+            updated_global_config = {
+                'target_project_dir': config_manager.global_config.target_directory or "",
+                'response_language': config_manager.global_config.response_language,
+                'default_cli_provider': config_manager.global_config.default_cli_provider,
+                'agent_enabled': config_manager.global_config.agent_enabled
             }
             
-            logger.info(f"Configuration updated for session {session_id}")
+            logger.info("Global configuration updated successfully")
             return jsonify({
                 'success': True,
-                'data': config_dict,
-                'message': 'Configuration updated successfully'
+                'data': {
+                    'global_config': updated_global_config
+                },
+                'message': 'Global configuration updated successfully'
             }), 200
             
         except Exception as e:
@@ -989,7 +947,7 @@ def register_api_routes(
     @app.route('/api/sessions', methods=['GET'])
     @auth_manager.require_auth
     def get_sessions():
-        """Get all archived sessions
+        """Get all sessions (both active and archived)
         
         Query parameters:
             - user_id: Filter by user_id
@@ -1015,43 +973,58 @@ def register_api_routes(
             import json
             from pathlib import Path
             
-            # Get archived sessions directory
-            sessions_dir = Path('data/archived_sessions')
-            
-            if not sessions_dir.exists():
-                return jsonify({
-                    'success': True,
-                    'data': {
-                        'sessions': [],
-                        'total': 0,
-                        'page': 1,
-                        'page_size': 20
-                    }
-                }), 200
-            
-            # Read all session files
             all_sessions = []
-            for session_file in sessions_dir.glob('*.json'):
+            
+            # Read active sessions from sessions.json
+            sessions_json_path = Path('data/sessions.json')
+            if sessions_json_path.exists():
                 try:
-                    with open(session_file, 'r', encoding='utf-8') as f:
-                        session_data = json.load(f)
-                        
-                        # Extract summary info
-                        message_count = len(session_data.get('messages', []))
-                        first_message = session_data.get('messages', [{}])[0].get('content', '')[:100] if message_count > 0 else ''
-                        
-                        session_summary = {
-                            'session_id': session_data.get('session_id'),
-                            'user_id': session_data.get('user_id'),
-                            'created_at': session_data.get('created_at'),
-                            'last_active': session_data.get('last_active'),
-                            'message_count': message_count,
-                            'first_message': first_message
-                        }
-                        all_sessions.append(session_summary)
+                    with open(sessions_json_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        sessions_data = data.get('sessions', {})
+                        for user_id, session_dict in sessions_data.items():
+                            # Extract summary info
+                            message_count = len(session_dict.get('messages', []))
+                            first_message = session_dict.get('messages', [{}])[0].get('content', '')[:100] if message_count > 0 else ''
+                            
+                            session_summary = {
+                                'session_id': session_dict.get('session_id'),
+                                'user_id': session_dict.get('user_id'),
+                                'created_at': session_dict.get('created_at'),
+                                'last_active': session_dict.get('last_active'),
+                                'message_count': message_count,
+                                'first_message': first_message,
+                                'status': 'active'
+                            }
+                            all_sessions.append(session_summary)
                 except Exception as e:
-                    logger.warning(f"Failed to read session file {session_file}: {e}")
-                    continue
+                    logger.warning(f"Failed to read sessions.json: {e}")
+            
+            # Read archived sessions from archived_sessions directory
+            sessions_dir = Path('data/archived_sessions')
+            if sessions_dir.exists():
+                for session_file in sessions_dir.glob('*.json'):
+                    try:
+                        with open(session_file, 'r', encoding='utf-8') as f:
+                            session_data = json.load(f)
+                            
+                            # Extract summary info
+                            message_count = len(session_data.get('messages', []))
+                            first_message = session_data.get('messages', [{}])[0].get('content', '')[:100] if message_count > 0 else ''
+                            
+                            session_summary = {
+                                'session_id': session_data.get('session_id'),
+                                'user_id': session_data.get('user_id'),
+                                'created_at': session_data.get('created_at'),
+                                'last_active': session_data.get('last_active'),
+                                'message_count': message_count,
+                                'first_message': first_message,
+                                'status': 'archived'
+                            }
+                            all_sessions.append(session_summary)
+                    except Exception as e:
+                        logger.warning(f"Failed to read session file {session_file}: {e}")
+                        continue
             
             # Apply filters
             user_id = request.args.get('user_id')
@@ -1129,7 +1102,8 @@ def register_api_routes(
                     "user_id": "xxx",
                     "created_at": 1234567890,
                     "last_active": 1234567890,
-                    "messages": [...]
+                    "messages": [...],
+                    "status": "active" or "archived"
                 }
             }
         """
@@ -1138,10 +1112,38 @@ def register_api_routes(
             import json
             from pathlib import Path
             
-            # Get archived sessions directory
-            sessions_dir = Path('data/archived_sessions')
+            session_data = None
+            status = None
             
-            if not sessions_dir.exists():
+            # First check in active sessions (sessions.json)
+            sessions_json_path = Path('data/sessions.json')
+            if sessions_json_path.exists():
+                try:
+                    with open(sessions_json_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        sessions_data = data.get('sessions', {})
+                        for user_id, session_dict in sessions_data.items():
+                            if session_dict.get('session_id') == session_id:
+                                session_data = session_dict
+                                status = 'active'
+                                break
+                except Exception as e:
+                    logger.warning(f"Failed to read sessions.json: {e}")
+            
+            # If not found in active sessions, check in archived sessions
+            if not session_data:
+                sessions_dir = Path('data/archived_sessions')
+                if sessions_dir.exists():
+                    for file in sessions_dir.glob(f'*_{session_id}_*.json'):
+                        try:
+                            with open(file, 'r', encoding='utf-8') as f:
+                                session_data = json.load(f)
+                                status = 'archived'
+                                break
+                        except Exception as e:
+                            logger.warning(f"Failed to read archived session file {file}: {e}")
+            
+            if not session_data:
                 return jsonify({
                     'success': False,
                     'error': {
@@ -1150,24 +1152,8 @@ def register_api_routes(
                     }
                 }), 404
             
-            # Find session file by session_id
-            session_file = None
-            for file in sessions_dir.glob(f'*_{session_id}_*.json'):
-                session_file = file
-                break
-            
-            if not session_file:
-                return jsonify({
-                    'success': False,
-                    'error': {
-                        'code': 'NOT_FOUND',
-                        'message': f'Session {session_id} not found'
-                    }
-                }), 404
-            
-            # Read session data
-            with open(session_file, 'r', encoding='utf-8') as f:
-                session_data = json.load(f)
+            # Add status to session data
+            session_data['status'] = status
             
             return jsonify({
                 'success': True,

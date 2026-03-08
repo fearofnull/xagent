@@ -121,8 +121,12 @@ class ConfigManager:
         # 2. 应用全局配置
         if self.global_config:
             effective["target_project_dir"] = self.global_config.target_directory or ""
-            effective["response_language"] = self.global_config.response_language
-            effective["default_cli_provider"] = self.global_config.default_cli_provider
+            # 检查 BotConfig 是否有 response_language 属性
+            if hasattr(self.global_config, 'response_language'):
+                effective["response_language"] = self.global_config.response_language
+            # 检查 BotConfig 是否有 default_cli_provider 属性
+            if hasattr(self.global_config, 'default_cli_provider'):
+                effective["default_cli_provider"] = self.global_config.default_cli_provider
         
         # 3. 应用会话配置
         if session_id in self.configs:
