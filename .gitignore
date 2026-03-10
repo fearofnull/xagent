@@ -78,7 +78,7 @@ frontend/node_modules/
 frontend/dist/
 
 # Frontend build artifacts (served by Flask)
-feishu_bot/web_admin/static/
+src/xagent/web_admin/static/
 
 # 截图和临时图片
 *.png
@@ -88,6 +88,7 @@ feishu_bot/web_admin/static/
 
 # 研究分析文档（包含项目分析，不需要提交到仓库）
 docs/research/
+research/
 
 # Trae IDE files
 .trae/
