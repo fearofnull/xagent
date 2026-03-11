@@ -46,6 +46,15 @@
           <el-icon><List /></el-icon>
           <span>会话配置列表</span>
         </router-link>
+        
+        <router-link 
+          to="/cron-jobs" 
+          class="nav-link"
+          active-class="nav-link-active"
+        >
+          <el-icon><Clock /></el-icon>
+          <span>定时任务</span>
+        </router-link>
       </div>
 
       <!-- Logout Button -->
@@ -69,7 +78,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
-import { Setting, List, Tools, SwitchButton, ChatDotRound, Connection } from '@element-plus/icons-vue'
+import { Setting, List, Tools, SwitchButton, ChatDotRound, Connection, Clock } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

@@ -25,6 +25,9 @@ configure_ssl()
 from src.xagent.config import BotConfig
 from src.xagent.xagent import XAgent
 
+# 导入定时任务相关模块
+from src.xagent.core.crons.manager import CronManager
+
 # 配置日志
 logging.basicConfig(
     level=logging.INFO,
@@ -54,11 +57,12 @@ def run_scheduler(bot: XAgent) -> None:
         time.sleep(60)  # 每分钟检查一次
 
 
-def start_web_admin(bot: XAgent) -> Optional[object]:
+def start_web_admin(bot: XAgent, cron_manager = None) -> Optional[object]:
     """启动 Web 管理界面（如果启用）
     
     Args:
         bot: XAgent 实例
+        cron_manager: CronManager 实例
         
     Returns:
         WebAdminServer 实例，如果未启用则返回 None
@@ -95,6 +99,7 @@ def start_web_admin(bot: XAgent) -> Optional[object]:
         logger.info("Initializing Web Admin Interface...")
         web_server = WebAdminServer(
             config_manager=bot.config_manager,
+            cron_manager=cron_manager,
             host=host,
             port=port,
             admin_password=admin_password,
@@ -149,6 +154,9 @@ def main():
     # Web 服务器实例（用于优雅关闭）
     web_server = None
     
+    # 定时任务管理器实例（用于优雅关闭）
+    cron_manager = None
+    
     try:
         # 加载配置
         logger.info("Loading configuration...")
@@ -160,13 +168,38 @@ def main():
         bot = XAgent(config)
         logger.info("✅ XAgent initialized successfully")
         
+        # 初始化 ChannelManager
+        logger.info("Initializing ChannelManager...")
+        from src.xagent.core.channels import ChannelManager, FeishuChannel
+        channel_manager = ChannelManager()
+        
+        # 创建并注册 FeishuChannel
+        feishu_channel = FeishuChannel(bot.message_sender)
+        channel_manager.register_channel("feishu", feishu_channel)
+        logger.info("✅ ChannelManager initialized with FeishuChannel")
+        
+        # 初始化定时任务管理器
+        logger.info("Initializing CronManager...")
+        cron_manager = CronManager(channel_manager=channel_manager)
+        logger.info("✅ CronManager initialized successfully")
+        
+        # 启动定时任务管理器（使用同步方法）
+        logger.info("Starting CronManager...")
+        cron_manager.start_sync()
+        logger.info("✅ CronManager started successfully")
+        
+        # 将cron_manager注入到bot的上下文中，使其可以被AI agent访问
+        # 这样AI agent可以通过SKILL.md的指导直接使用CronManager API
+        bot.cron_manager = cron_manager
+        logger.info("✅ CronManager injected into bot context")
+        
         # 启动定时任务线程
         scheduler_thread = Thread(target=run_scheduler, args=(bot,), daemon=True)
         scheduler_thread.start()
         logger.info("✅ Scheduler started")
         
         # 启动 Web 管理界面（如果启用）
-        web_server = start_web_admin(bot)
+        web_server = start_web_admin(bot, cron_manager)
         
         # 启动机器人
         logger.info("Starting XAgent...")
@@ -183,6 +216,14 @@ def main():
             except Exception as e:
                 logger.error(f"Error stopping Web Admin Interface: {e}")
         
+        # 优雅关闭 CronManager
+        if cron_manager is not None:
+            try:
+                logger.info("Stopping CronManager...")
+                cron_manager.stop_sync()
+            except Exception as e:
+                logger.error(f"Error stopping CronManager: {e}")
+        
         sys.exit(0)
     except Exception as e:
         logger.error(f"❌ Failed to start bot: {e}", exc_info=True)
@@ -193,6 +234,14 @@ def main():
                 web_server.stop()
             except Exception as e:
                 logger.error(f"Error stopping Web Admin Interface: {e}")
+        
+        # 优雅关闭 CronManager
+        if cron_manager is not None:
+            try:
+                logger.info("Stopping CronManager...")
+                cron_manager.stop_sync()
+            except Exception as e:
+                logger.error(f"Error stopping CronManager: {e}")
         
         sys.exit(1)
 

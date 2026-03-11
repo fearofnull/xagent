@@ -725,6 +725,519 @@ curl -X POST http://localhost:5000/api/configs/import \
 
 ---
 
+### 5. 定时任务 API
+
+#### 5.1 获取所有定时任务
+
+**端点**: `GET /api/cron/jobs`
+
+**描述**: 获取所有定时任务的列表。
+
+**认证**: 需要
+
+**成功响应** (200 OK):
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "job-123",
+      "name": "Daily Reminder",
+      "enabled": true,
+      "schedule": {
+        "type": "cron",
+        "cron": "0 9 * * *",
+        "timezone": "UTC"
+      },
+      "task_type": "text",
+      "text": "Good morning!",
+      "dispatch": {
+        "type": "channel",
+        "channel": "console",
+        "target": {
+          "user_id": "test-user",
+          "session_id": "test-session"
+        },
+        "mode": "final",
+        "meta": {}
+      },
+      "runtime": {
+        "max_concurrency": 1,
+        "timeout_seconds": 120,
+        "misfire_grace_seconds": 60
+      },
+      "meta": {}
+    }
+  ]
+}
+```
+
+**错误响应**:
+
+- **401 Unauthorized** - 未认证
+- **500 Internal Server Error** - 服务器错误
+
+**示例请求**:
+```bash
+curl -X GET http://localhost:5000/api/cron/jobs \
+  -H "Authorization: Bearer <your_token>"
+```
+
+---
+
+#### 5.2 创建定时任务
+
+**端点**: `POST /api/cron/jobs`
+
+**描述**: 创建一个新的定时任务。
+
+**认证**: 需要
+
+**请求体**:
+```json
+{
+  "id": "job-123",
+  "name": "Daily Reminder",
+  "enabled": true,
+  "schedule": {
+    "type": "cron",
+    "cron": "0 9 * * *",
+    "timezone": "UTC"
+  },
+  "task_type": "text",
+  "text": "Good morning!",
+  "dispatch": {
+    "type": "channel",
+    "channel": "console",
+    "target": {
+      "user_id": "test-user",
+      "session_id": "test-session"
+    },
+    "mode": "final",
+    "meta": {}
+  },
+  "runtime": {
+    "max_concurrency": 1,
+    "timeout_seconds": 120,
+    "misfire_grace_seconds": 60
+  },
+  "meta": {}
+}
+```
+
+**字段说明**:
+- `id`: 任务 ID（唯一标识）
+- `name`: 任务名称
+- `enabled`: 是否启用
+- `schedule`: 调度配置
+- `task_type`: 任务类型（`text` 或 `agent`）
+- `text`: 文本任务内容
+- `dispatch`: 分发配置
+- `runtime`: 运行时配置
+- `meta`: 元数据
+
+**成功响应** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "id": "job-123",
+    "name": "Daily Reminder",
+    "enabled": true,
+    "schedule": {
+      "type": "cron",
+      "cron": "0 9 * * *",
+      "timezone": "UTC"
+    },
+    "task_type": "text",
+    "text": "Good morning!",
+    "dispatch": {
+      "type": "channel",
+      "channel": "console",
+      "target": {
+        "user_id": "test-user",
+        "session_id": "test-session"
+      },
+      "mode": "final",
+      "meta": {}
+    },
+    "runtime": {
+      "max_concurrency": 1,
+      "timeout_seconds": 120,
+      "misfire_grace_seconds": 60
+    },
+    "meta": {}
+  },
+  "message": "Cron job created successfully"
+}
+```
+
+**错误响应**:
+
+- **400 Bad Request** - 无效的请求数据
+- **401 Unauthorized** - 未认证
+- **500 Internal Server Error** - 服务器错误
+
+**示例请求**:
+```bash
+curl -X POST http://localhost:5000/api/cron/jobs \
+  -H "Authorization: Bearer <your_token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "job-123",
+    "name": "Daily Reminder",
+    "enabled": true,
+    "schedule": {
+      "type": "cron",
+      "cron": "0 9 * * *",
+      "timezone": "UTC"
+    },
+    "task_type": "text",
+    "text": "Good morning!",
+    "dispatch": {
+      "type": "channel",
+      "channel": "console",
+      "target": {
+        "user_id": "test-user",
+        "session_id": "test-session"
+      },
+      "mode": "final",
+      "meta": {}
+    },
+    "runtime": {
+      "max_concurrency": 1,
+      "timeout_seconds": 120,
+      "misfire_grace_seconds": 60
+    },
+    "meta": {}
+  }'
+```
+
+---
+
+#### 5.3 获取单个定时任务
+
+**端点**: `GET /api/cron/jobs/:job_id`
+
+**描述**: 获取指定定时任务的详情。
+
+**认证**: 需要
+
+**路径参数**:
+- `job_id`: 任务 ID
+
+**成功响应** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "spec": {
+      "id": "job-123",
+      "name": "Daily Reminder",
+      "enabled": true,
+      "schedule": {
+        "type": "cron",
+        "cron": "0 9 * * *",
+        "timezone": "UTC"
+      },
+      "task_type": "text",
+      "text": "Good morning!",
+      "dispatch": {
+        "type": "channel",
+        "channel": "console",
+        "target": {
+          "user_id": "test-user",
+          "session_id": "test-session"
+        },
+        "mode": "final",
+        "meta": {}
+      },
+      "runtime": {
+        "max_concurrency": 1,
+        "timeout_seconds": 120,
+        "misfire_grace_seconds": 60
+      },
+      "meta": {}
+    },
+    "state": {
+      "last_run_at": "2024-01-01T09:00:00Z",
+      "next_run_at": "2024-01-02T09:00:00Z",
+      "last_status": "success",
+      "last_error": null
+    }
+  }
+}
+```
+
+**错误响应**:
+
+- **404 Not Found** - 任务不存在
+- **401 Unauthorized** - 未认证
+- **500 Internal Server Error** - 服务器错误
+
+**示例请求**:
+```bash
+curl -X GET http://localhost:5000/api/cron/jobs/job-123 \
+  -H "Authorization: Bearer <your_token>"
+```
+
+---
+
+#### 5.4 更新定时任务
+
+**端点**: `PUT /api/cron/jobs/:job_id`
+
+**描述**: 更新指定的定时任务。
+
+**认证**: 需要
+
+**路径参数**:
+- `job_id`: 任务 ID
+
+**请求体**:
+```json
+{
+  "id": "job-123",
+  "name": "Updated Daily Reminder",
+  "enabled": true,
+  "schedule": {
+    "type": "cron",
+    "cron": "0 8 * * *",
+    "timezone": "UTC"
+  },
+  "task_type": "text",
+  "text": "Good morning! Have a nice day!",
+  "dispatch": {
+    "type": "channel",
+    "channel": "console",
+    "target": {
+      "user_id": "test-user",
+      "session_id": "test-session"
+    },
+    "mode": "final",
+    "meta": {}
+  },
+  "runtime": {
+    "max_concurrency": 1,
+    "timeout_seconds": 120,
+    "misfire_grace_seconds": 60
+  },
+  "meta": {}
+}
+```
+
+**成功响应** (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "id": "job-123",
+    "name": "Updated Daily Reminder",
+    "enabled": true,
+    "schedule": {
+      "type": "cron",
+      "cron": "0 8 * * *",
+      "timezone": "UTC"
+    },
+    "task_type": "text",
+    "text": "Good morning! Have a nice day!",
+    "dispatch": {
+      "type": "channel",
+      "channel": "console",
+      "target": {
+        "user_id": "test-user",
+        "session_id": "test-session"
+      },
+      "mode": "final",
+      "meta": {}
+    },
+    "runtime": {
+      "max_concurrency": 1,
+      "timeout_seconds": 120,
+      "misfire_grace_seconds": 60
+    },
+    "meta": {}
+  },
+  "message": "Cron job updated successfully"
+}
+```
+
+**错误响应**:
+
+- **400 Bad Request** - 无效的请求数据
+- **404 Not Found** - 任务不存在
+- **401 Unauthorized** - 未认证
+- **500 Internal Server Error** - 服务器错误
+
+**示例请求**:
+```bash
+curl -X PUT http://localhost:5000/api/cron/jobs/job-123 \
+  -H "Authorization: Bearer <your_token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "job-123",
+    "name": "Updated Daily Reminder",
+    "enabled": true,
+    "schedule": {
+      "type": "cron",
+      "cron": "0 8 * * *",
+      "timezone": "UTC"
+    },
+    "task_type": "text",
+    "text": "Good morning! Have a nice day!",
+    "dispatch": {
+      "type": "channel",
+      "channel": "console",
+      "target": {
+        "user_id": "test-user",
+        "session_id": "test-session"
+      },
+      "mode": "final",
+      "meta": {}
+    },
+    "runtime": {
+      "max_concurrency": 1,
+      "timeout_seconds": 120,
+      "misfire_grace_seconds": 60
+    },
+    "meta": {}
+  }'
+```
+
+---
+
+#### 5.5 删除定时任务
+
+**端点**: `DELETE /api/cron/jobs/:job_id`
+
+**描述**: 删除指定的定时任务。
+
+**认证**: 需要
+
+**路径参数**:
+- `job_id`: 任务 ID
+
+**成功响应** (200 OK):
+```json
+{
+  "success": true,
+  "message": "Cron job deleted successfully"
+}
+```
+
+**错误响应**:
+
+- **404 Not Found** - 任务不存在
+- **401 Unauthorized** - 未认证
+- **500 Internal Server Error** - 服务器错误
+
+**示例请求**:
+```bash
+curl -X DELETE http://localhost:5000/api/cron/jobs/job-123 \
+  -H "Authorization: Bearer <your_token>"
+```
+
+---
+
+#### 5.6 暂停定时任务
+
+**端点**: `POST /api/cron/jobs/:job_id/pause`
+
+**描述**: 暂停指定的定时任务。
+
+**认证**: 需要
+
+**路径参数**:
+- `job_id`: 任务 ID
+
+**成功响应** (200 OK):
+```json
+{
+  "success": true,
+  "message": "Cron job paused successfully"
+}
+```
+
+**错误响应**:
+
+- **404 Not Found** - 任务不存在
+- **401 Unauthorized** - 未认证
+- **500 Internal Server Error** - 服务器错误
+
+**示例请求**:
+```bash
+curl -X POST http://localhost:5000/api/cron/jobs/job-123/pause \
+  -H "Authorization: Bearer <your_token>"
+```
+
+---
+
+#### 5.7 恢复定时任务
+
+**端点**: `POST /api/cron/jobs/:job_id/resume`
+
+**描述**: 恢复指定的定时任务。
+
+**认证**: 需要
+
+**路径参数**:
+- `job_id`: 任务 ID
+
+**成功响应** (200 OK):
+```json
+{
+  "success": true,
+  "message": "Cron job resumed successfully"
+}
+```
+
+**错误响应**:
+
+- **404 Not Found** - 任务不存在
+- **401 Unauthorized** - 未认证
+- **500 Internal Server Error** - 服务器错误
+
+**示例请求**:
+```bash
+curl -X POST http://localhost:5000/api/cron/jobs/job-123/resume \
+  -H "Authorization: Bearer <your_token>"
+```
+
+---
+
+#### 5.8 立即执行定时任务
+
+**端点**: `POST /api/cron/jobs/:job_id/run`
+
+**描述**: 立即执行指定的定时任务。
+
+**认证**: 需要
+
+**路径参数**:
+- `job_id`: 任务 ID
+
+**成功响应** (200 OK):
+```json
+{
+  "success": true,
+  "message": "Cron job started successfully"
+}
+```
+
+**错误响应**:
+
+- **404 Not Found** - 任务不存在
+- **401 Unauthorized** - 未认证
+- **500 Internal Server Error** - 服务器错误
+
+**示例请求**:
+```bash
+curl -X POST http://localhost:5000/api/cron/jobs/job-123/run \
+  -H "Authorization: Bearer <your_token>"
+```
+
+---
+
 ## 错误码说明
 
 ### 认证错误 (401)

@@ -1,0 +1,31 @@
+{
+  "id": "daily-morning-greeting",
+  "name": "每日早安问候",
+  "enabled": true,
+  "schedule": {
+    "type": "cron",
+    "cron": "0 9 * * *",
+    "timezone": "Asia/Shanghai"
+  },
+  "task_type": "text",
+  "text": "早上好！新的一天开始了，祝你今天工作顺利！",
+  "dispatch": {
+    "type": "channel",
+    "channel": "feishu",
+    "target": {
+      "user_id": "ou_xxxxxxxxxxxxx",
+      "session_id": "om_xxxxxxxxxxxxx"
+    },
+    "mode": "final",
+    "meta": {}
+  },
+  "runtime": {
+    "max_concurrency": 1,
+    "timeout_seconds": 120,
+    "misfire_grace_seconds": 60
+  },
+  "meta": {
+    "created_by": "admin",
+    "description": "每天早上9点发送问候消息"
+  }
+}

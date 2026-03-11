@@ -43,14 +43,15 @@ class MessageSender:
     ) -> bool:
         """发送消息
         
-        根据聊天类型选择发送策略：
-        - p2p：使用 send_new_message
-        - 其他：使用 reply_message
+        根据聊天类型和参数选择发送策略：
+        - p2p: 使用 send_new_message 发送到私聊
+        - group + message_id: 使用 reply_message 回复消息
+        - group + no message_id: 使用 send_new_message 发送到群聊
         
         Args:
             chat_type: 聊天类型（p2p, group 等）
-            chat_id: 聊天 ID
-            message_id: 消息 ID
+            chat_id: 聊天 ID (用于发送新消息)
+            message_id: 消息 ID (用于回复消息)
             content: 消息内容
             
         Returns:
@@ -58,29 +59,39 @@ class MessageSender:
         """
         try:
             if chat_type == "p2p":
+                # Private chat: send new message
                 return self.send_new_message(chat_id, content)
+            elif chat_type == "group":
+                if message_id:
+                    # Group chat with message_id: reply to message
+                    return self.reply_message(message_id, content)
+                else:
+                    # Group chat without message_id: send new message to group
+                    return self.send_new_message(chat_id, content)
             else:
-                return self.reply_message(message_id, content)
+                # Fallback: try to send new message
+                return self.send_new_message(chat_id, content)
         except Exception as e:
             logger.error(f"Failed to send message: {e}", exc_info=True)
             return False
     
-    def send_new_message(self, chat_id: str, content: str) -> bool:
-        """发送新消息（用于私聊）
+    def send_new_message(self, receive_id: str, content: str, receive_id_type: str = "chat_id") -> bool:
+        """发送新消息
         
         Args:
-            chat_id: 聊天 ID
+            receive_id: 接收者 ID
             content: 消息内容
+            receive_id_type: ID 类型 ("chat_id", "open_id", "user_id", "union_id")
             
         Returns:
             True 如果发送成功
         """
         try:
             request = CreateMessageRequest.builder() \
-                .receive_id_type("chat_id") \
+                .receive_id_type(receive_id_type) \
                 .request_body(
                     CreateMessageRequestBody.builder()
-                    .receive_id(chat_id)
+                    .receive_id(receive_id)
                     .msg_type("text")
                     .content(f'{{"text":"{self._escape_json(content)}"}}')
                     .build()
@@ -92,11 +103,12 @@ class MessageSender:
             if not response.success():
                 logger.error(
                     f"Failed to send new message: code={response.code}, "
-                    f"msg={response.msg}, log_id={response.get_log_id()}"
+                    f"msg={response.msg}, log_id={response.get_log_id()}, "
+                    f"receive_id_type={receive_id_type}"
                 )
                 return False
             
-            logger.info(f"Successfully sent new message to chat {chat_id}")
+            logger.info(f"Successfully sent new message: receive_id_type={receive_id_type}, receive_id={receive_id[:20] if len(receive_id) > 20 else receive_id}")
             return True
             
         except Exception as e:

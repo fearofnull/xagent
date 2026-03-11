@@ -6,6 +6,7 @@ import GlobalConfig from '../views/GlobalConfig.vue'
 import Sessions from '../views/Sessions.vue'
 import SessionDetail from '../views/SessionDetail.vue'
 import Providers from '../views/Providers.vue'
+import CronJobs from '../views/CronJobs.vue'
 
 const routes = [
   {
@@ -51,6 +52,12 @@ const routes = [
     path: '/providers',
     name: 'Providers',
     component: Providers,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/cron-jobs',
+    name: 'CronJobs',
+    component: CronJobs,
     meta: { requiresAuth: true }
   }
 ]

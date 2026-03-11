@@ -56,8 +56,8 @@ export default defineConfig({
     }
   },
   build: {
-    // Output to ../feishu_bot/web_admin/static for Flask to serve
-    outDir: '../feishu_bot/web_admin/static',
+    // Output to ../src/xagent/web_admin/static for Flask to serve
+    outDir: '../src/xagent/web_admin/static',
     // Clean output directory before build
     emptyOutDir: true,
     // Generate source maps for debugging

@@ -31,6 +31,16 @@ MEMORY_COMPACT_RATIO = float(
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH_ENV = "XAGENT_PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH"
 RUNNING_IN_CONTAINER = os.environ.get("XAGENT_RUNNING_IN_CONTAINER", "")
 
+# Skills directories
+# Active skills directory (activated skills that agents use)
+ACTIVE_SKILLS_DIR = WORKING_DIR / "active_skills"
+# Customized skills directory (user-created skills)
+CUSTOMIZED_SKILLS_DIR = WORKING_DIR / "customized_skills"
+
+# Web Admin configuration
+WEB_ADMIN_URL = os.getenv("WEB_ADMIN_URL", "http://localhost:8080")
+WEB_ADMIN_TOKEN = os.getenv("WEB_ADMIN_TOKEN", "")
+
 # File paths
 HEARTBEAT_FILE = "HEARTBEAT.md"
 JOBS_FILE = "jobs.json"

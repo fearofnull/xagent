@@ -21,7 +21,8 @@ from .tools import (
     edit_file,
     get_current_time,
     desktop_screenshot,
-    send_file_to_user
+    send_file_to_user,
+    call_cron_api,
 )
 from .memory import MemoryManager
 from ..constant import (
@@ -114,8 +115,43 @@ class XAgent(ReActAgent):
         toolkit.register_tool_function(get_current_time)
         toolkit.register_tool_function(desktop_screenshot)
         toolkit.register_tool_function(send_file_to_user)
+        toolkit.register_tool_function(call_cron_api)
+
+        # Register skills from active_skills directory
+        self._register_skills(toolkit)
 
         return toolkit
+
+    def _register_skills(self, toolkit: Toolkit) -> None:
+        """Load and register skills from working directory.
+
+        Args:
+            toolkit: Toolkit to register skills to
+        """
+        from .skills_manager import (
+            ensure_skills_initialized,
+            get_active_skills_dir,
+            list_available_skills,
+        )
+
+        # Check skills initialization
+        ensure_skills_initialized()
+
+        working_skills_dir = get_active_skills_dir()
+        available_skills = list_available_skills()
+
+        for skill_name in available_skills:
+            skill_dir = working_skills_dir / skill_name
+            if skill_dir.exists():
+                try:
+                    toolkit.register_agent_skill(str(skill_dir))
+                    logger.debug("Registered skill: %s", skill_name)
+                except Exception as e:
+                    logger.error(
+                        "Failed to register skill '%s': %s",
+                        skill_name,
+                        e,
+                    )
 
     def _build_sys_prompt(self) -> str:
         """Build system prompt from working dir files and env context.

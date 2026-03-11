@@ -172,3 +172,30 @@ export const sessionAPI = {
   // Delete session
   deleteSession: (sessionId) => apiClient.delete(`/sessions/${sessionId}`)
 }
+
+export const cronAPI = {
+  // Get all cron jobs
+  getCronJobs: () => apiClient.get('/cron/jobs'),
+  
+  // Get single cron job
+  getCronJob: (jobId) => apiClient.get(`/cron/jobs/${jobId}`),
+  
+  // Create new cron job
+  createCronJob: (data) => apiClient.post('/cron/jobs', data),
+  
+  // Update cron job
+  updateCronJob: (jobId, data) => apiClient.put(`/cron/jobs/${jobId}`, data),
+  
+  // Delete cron job
+  deleteCronJob: (jobId) => apiClient.delete(`/cron/jobs/${jobId}`),
+  
+  // Pause cron job
+  pauseCronJob: (jobId) => apiClient.post(`/cron/jobs/${jobId}/pause`),
+  
+  // Resume cron job
+  resumeCronJob: (jobId) => apiClient.post(`/cron/jobs/${jobId}/resume`),
+  
+  // Run cron job immediately
+  runCronJob: (jobId) => apiClient.post(`/cron/jobs/${jobId}/run`)
+}
+

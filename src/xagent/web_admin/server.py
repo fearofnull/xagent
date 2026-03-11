@@ -14,6 +14,7 @@ from flask_cors import CORS
 from ..core.config_manager import ConfigManager
 from .auth import AuthManager
 from .routes import register_api_routes, register_provider_api_routes
+from .routes.cron_api_routes import register_cron_api_routes
 from .logging_config import configure_logging
 from .rate_limiter import create_limiter, configure_rate_limits, handle_rate_limit_exceeded
 from .response_compression import configure_compression
@@ -31,6 +32,7 @@ class WebAdminServer:
     def __init__(
         self,
         config_manager: ConfigManager,
+        cron_manager = None,
         host: str = "0.0.0.0",
         port: int = 5000,
         admin_password: Optional[str] = None,
@@ -44,6 +46,7 @@ class WebAdminServer:
         
         Args:
             config_manager: Configuration manager instance
+            cron_manager: CronManager instance (optional)
             host: Server host address (default: 0.0.0.0)
             port: Server port (default: 5000)
             admin_password: Admin password for authentication
@@ -54,6 +57,7 @@ class WebAdminServer:
             enable_rate_limiting: Enable rate limiting (default: True)
         """
         self.config_manager = config_manager
+        self.cron_manager = cron_manager
         self.host = host
         self.port = port
         
@@ -116,6 +120,15 @@ class WebAdminServer:
             self.auth_manager,
             rate_limits=self.rate_limits
         )
+        
+        # Register cron API routes if cron_manager is provided
+        if self.cron_manager:
+            register_cron_api_routes(
+                self.app,
+                self.cron_manager,
+                self.auth_manager,
+                rate_limits=self.rate_limits
+            )
         
         # Determine static folder path
         if static_folder is None or static_folder == '':
@@ -242,7 +255,34 @@ class WebAdminServer:
         print(f"{'='*60}\n")
         
         try:
-            self.app.run(host=self.host, port=self.port, debug=debug)
+            # 尝试使用 waitress (生产级 WSGI 服务器)
+            try:
+                from waitress import serve
+                logger.info("Using Waitress WSGI server (production-ready)")
+                serve(
+                    self.app,
+                    host=self.host,
+                    port=self.port,
+                    threads=4,  # 线程数
+                    channel_timeout=60,
+                    cleanup_interval=30,
+                    _quiet=False
+                )
+            except ImportError:
+                # 如果 waitress 未安装,回退到 Flask 内置服务器
+                logger.warning("Waitress not installed, using Flask development server")
+                logger.warning("For production, install waitress: pip install waitress")
+                
+                # 禁用 Werkzeug 的开发服务器警告
+                os.environ['WERKZEUG_RUN_MAIN'] = 'true'
+                
+                self.app.run(
+                    host=self.host, 
+                    port=self.port, 
+                    debug=debug,
+                    use_reloader=False,
+                    threaded=True
+                )
         except KeyboardInterrupt:
             logger.info("Web Admin Server stopped by user")
             self.stop()

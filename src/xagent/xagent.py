@@ -397,15 +397,15 @@ class XAgent:
             logger.info(f"[DEBUG] parsed_command.message after update: {parsed_command.message[:300]}")
             logger.info(f"Final message to be sent to executor (first 200 chars): {final_message[:200]}")
             
-            # 5. 确定会话 ID（私聊用 user_id，群聊用 chat_id）
-            # 处理 sender_id 为 None 的情况
-            if sender_id is None:
-                # 对于没有 user_id 的情况，使用 chat_id 作为会话 ID
-                session_id = chat_id
-                session_type = "group"  # 默认为群聊类型
-            else:
-                session_id = sender_id if chat_type == "p2p" else chat_id
-                session_type = "user" if chat_type == "p2p" else "group"
+            # 5. 确定会话 ID - 统一使用 chat_id (私聊和群聊都一样)
+            # 优势:
+            # 1. chat_id 总是可以获取,不依赖权限
+            # 2. 飞书 P2P chat_id 是唯一且固定的,跨设备一致
+            # 3. 逻辑简单,不需要 fallback
+            session_id = chat_id
+            session_type = "user" if chat_type == "p2p" else "group"
+            
+            logger.info(f"Session: session_id={session_id}, session_type={session_type}")
             
             # 6. 配置命令检查
             if self._handle_config_command(
