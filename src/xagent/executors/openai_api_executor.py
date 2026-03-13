@@ -41,10 +41,18 @@ class OpenAIAPIExecutor(AIAPIExecutor):
             base_url: API 基础 URL（可选，用于兼容 OpenAI 的 API）
         """
         super().__init__(api_key, model, timeout)
+        default_headers = {"API-KEY": api_key}
         if base_url:
-            self.client = openai.OpenAI(api_key=api_key, base_url=base_url)
+            self.client = openai.OpenAI(
+                api_key=api_key,
+                base_url=base_url,
+                default_headers=default_headers,
+            )
         else:
-            self.client = openai.OpenAI(api_key=api_key)
+            self.client = openai.OpenAI(
+                api_key=api_key,
+                default_headers=default_headers,
+            )
     
     def get_provider_name(self) -> str:
         """返回 AI 提供商名称

@@ -572,7 +572,8 @@ def register_provider_api_routes(
                     client = OpenAI(
                         api_key=config.api_key,
                         base_url=config.base_url if config.base_url else None,
-                        timeout=30.0
+                        timeout=30.0,
+                        default_headers={"API-KEY": config.api_key}
                     )
                     
                     response = client.chat.completions.create(
@@ -581,9 +582,7 @@ def register_provider_api_routes(
                         max_tokens=5
                     )
                     
-                    if not response or not response.choices:
-                        raise RuntimeError("API returned empty response")
-                    response_text = response.choices[0].message.content or ""
+                    response_text = response.choices[0].message.content
                     
                 elif config.type == "claude_compatible":
                     # Test Claude-compatible API
@@ -601,9 +600,7 @@ def register_provider_api_routes(
                         messages=[{"role": "user", "content": "Hi"}]
                     )
                     
-                    if not response or not response.content:
-                        raise RuntimeError("API returned empty response")
-                    response_text = response.content[0].text or ""
+                    response_text = response.content[0].text
                     
                 elif config.type == "gemini_compatible":
                     # Test Gemini-compatible API
