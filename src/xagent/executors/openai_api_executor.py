@@ -123,13 +123,17 @@ class OpenAIAPIExecutor(AIAPIExecutor):
                 "model": self.model,
                 "messages": messages,
             }
+            use_max_completion_tokens = str(self.model).startswith("gpt-5")
             
             # 添加可选参数
             if additional_params:
                 if "temperature" in additional_params:
                     request_params["temperature"] = additional_params["temperature"]
                 if "max_tokens" in additional_params:
-                    request_params["max_tokens"] = additional_params["max_tokens"]
+                    if use_max_completion_tokens:
+                        request_params["max_completion_tokens"] = additional_params["max_tokens"]
+                    else:
+                        request_params["max_tokens"] = additional_params["max_tokens"]
             
             logger.debug(f"OpenAI API request params: {request_params.keys()}")
             
@@ -150,6 +154,34 @@ class OpenAIAPIExecutor(AIAPIExecutor):
                 )
             
             content = response.choices[0].message.content or ""
+
+            # Fallback: try raw HTTP if content is empty
+            if not content:
+                try:
+                    import httpx
+                    base_url = (self.client.base_url if hasattr(self.client, "base_url") else None) or ""
+                    base_url = str(base_url).rstrip("/")
+                    url = f"{base_url}/chat/completions" if base_url else ""
+                    headers = {
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {self.api_key}",
+                        "API-KEY": self.api_key,
+                    }
+                    payload = {
+                        "model": self.model,
+                        "messages": messages,
+                    }
+                    if "temperature" in request_params:
+                        payload["temperature"] = request_params["temperature"]
+                    if "max_completion_tokens" in request_params:
+                        payload["max_completion_tokens"] = request_params["max_completion_tokens"]
+                    if "max_tokens" in request_params:
+                        payload["max_tokens"] = request_params["max_tokens"]
+                    raw_resp = httpx.post(url, headers=headers, json=payload, timeout=60.0)
+                    raw_json = raw_resp.json()
+                    content = raw_json.get("choices", [{}])[0].get("message", {}).get("content", "") or ""
+                except Exception as e:
+                    logger.warning(f"OpenAI raw HTTP fallback failed: {e}")
             
             logger.info(
                 f"OpenAI API call successful: execution_time={execution_time:.2f}s, "

@@ -576,13 +576,102 @@ def register_provider_api_routes(
                         default_headers={"API-KEY": config.api_key}
                     )
                     
-                    response = client.chat.completions.create(
-                        model=test_model,
-                        messages=[{"role": "user", "content": "Hi"}],
-                        max_tokens=5
-                    )
+                    test_params = {
+                        "model": test_model,
+                        "messages": [{"role": "user", "content": "Hi"}],
+                    }
+                    if str(test_model).startswith("gpt-5"):
+                        test_params["max_completion_tokens"] = 32
+                    else:
+                        test_params["max_tokens"] = 5
+
+                    response = client.chat.completions.create(**test_params)
                     
-                    response_text = response.choices[0].message.content
+                    response_text = None
+                    if response and getattr(response, "choices", None):
+                        try:
+                            response_text = response.choices[0].message.content
+                        except Exception:
+                            response_text = None
+                        # Treat empty content with valid response as success (e.g. finish_reason=length)
+                        if response_text is not None and response_text == "":
+                            response_text = "(empty content)"
+
+                    # Fallback to raw HTTP when SDK response is empty or malformed
+                    if not response_text:
+                        import httpx
+                        base_url = (config.base_url or "").rstrip("/")
+                        url = f"{base_url}/chat/completions" if base_url else ""
+                        headers = {
+                            "Content-Type": "application/json",
+                            "Authorization": f"Bearer {config.api_key}",
+                            "API-KEY": config.api_key,
+                        }
+                        payload = {
+                            "model": test_model,
+                            "messages": [{"role": "user", "content": "Hi"}],
+                        }
+                        if str(test_model).startswith("gpt-5"):
+                            payload["max_completion_tokens"] = 32
+                        else:
+                            payload["max_tokens"] = 5
+                        raw_resp = httpx.post(url, headers=headers, json=payload, timeout=30.0)
+                        raw_text = raw_resp.text or ""
+                        try:
+                            raw_json = raw_resp.json()
+                        except Exception:
+                            raw_json = None
+
+                        def _extract_text_from_json(data):
+                            if not isinstance(data, dict):
+                                return None
+                            # Provider wrapper: {code, data, msg, desc}
+                            if "code" in data and data.get("code") not in (0, "0", None):
+                                return None
+                            # OpenAI-compatible
+                            try:
+                                return data["choices"][0]["message"]["content"]
+                            except Exception:
+                                pass
+                            # Streaming-like delta
+                            try:
+                                return data["choices"][0]["delta"]["content"]
+                            except Exception:
+                                pass
+                            # Common variants
+                            for key in ("output_text", "content", "text"):
+                                val = data.get(key)
+                                if isinstance(val, str) and val.strip():
+                                    return val
+                            # Array variants
+                            try:
+                                return data["data"][0].get("content") or data["data"][0].get("text")
+                            except Exception:
+                                pass
+                            return None
+
+                        response_text = _extract_text_from_json(raw_json)
+
+                        if not response_text:
+                            # Attach diagnostics for debugging (truncate body)
+                            body_preview = raw_text[:800]
+                            logger.error(
+                                "OpenAI-compatible test returned empty content. "
+                                "status=%s content_type=%s body_preview=%r",
+                                raw_resp.status_code,
+                                raw_resp.headers.get("content-type"),
+                                body_preview,
+                            )
+                            # Try to extract provider error message for user feedback
+                            if raw_json and isinstance(raw_json, dict) and raw_json.get("data"):
+                                return jsonify({
+                                    'success': False,
+                                    'error': {
+                                        'code': 'PROVIDER_ERROR',
+                                        'message': raw_json.get("desc") or raw_json.get("msg") or 'Provider returned error',
+                                        'details': raw_json.get("data"),
+                                    }
+                                }), 400
                     
                 elif config.type == "claude_compatible":
                     # Test Claude-compatible API
@@ -635,7 +724,7 @@ def register_provider_api_routes(
                         'success': False,
                         'error': {
                             'code': 'INVALID_RESPONSE',
-                            'message': 'API returned invalid response format'
+                            'message': 'API returned invalid response format (empty content)'
                         }
                     }), 400
                 
