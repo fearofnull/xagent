@@ -73,6 +73,9 @@ class XAgent:
         self.response_formatter = ResponseFormatter()
         self.message_sender = MessageSender(self.client)
         
+        # 机器人的 open_id，用于检测是否被@
+        self.bot_open_id = None
+        
         # 初始化提供商配置管理器
         from .core.provider_config_manager import ProviderConfigManager
         self.provider_config_manager = ProviderConfigManager(
@@ -322,13 +325,6 @@ class XAgent:
             
             logger.info(f"Received message {message_id} from user {sender_id}")
             
-            # 0. 立即发送emoji反应（在线程中异步执行，不阻塞后续消息处理）
-            threading.Thread(
-                target=self._send_emoji_in_thread,
-                args=(message_id,),
-                daemon=True
-            ).start()
-            
             # 1. 消息去重
             if self.dedup_cache.is_processed(message_id):
                 logger.info(f"Message {message_id} already processed, skipping")
@@ -343,6 +339,13 @@ class XAgent:
                 if not is_mentioned:
                     logger.info(f"Message {message_id} in group chat does not mention bot, skipping")
                     return
+            
+            # 3. 发送emoji反应（在线程中异步执行，不阻塞后续消息处理）
+            threading.Thread(
+                target=self._send_emoji_in_thread,
+                args=(message_id,),
+                daemon=True
+            ).start()
             
             # 3. 消息解析
             # 调试：打印消息类型和所有属性
@@ -578,24 +581,30 @@ class XAgent:
             message: 飞书消息对象
             
         Returns:
-            True 如果消息中@了机器人
+            True 如果消息中@了当前机器人
         """
         try:
             # 检查 mentions 字段
             if hasattr(message, 'mentions') and message.mentions:
                 # mentions 是一个列表，包含所有被@的用户/机器人
                 for mention in message.mentions:
-                    # 检查是否@了当前机器人（通过 app_id 匹配）
+                    # 检查是否有 open_id
                     if hasattr(mention, 'id') and hasattr(mention.id, 'open_id'):
-                        # 如果 mention 的 id 是机器人的 app_id，说明@了机器人
-                        logger.debug(f"Found mention: {mention.id.open_id}")
-                    # 也可以通过 tenant_key 判断
-                    if hasattr(mention, 'tenant_key'):
-                        logger.debug(f"Mention tenant_key: {mention.tenant_key}")
+                        mention_open_id = mention.id.open_id
+                        logger.debug(f"Found mention: {mention_open_id}")
+                        
+                        # 记录机器人的 open_id（如果还没有记录）
+                        if self.bot_open_id is None:
+                            self.bot_open_id = mention_open_id
+                            logger.info(f"Bot open_id recorded: {self.bot_open_id}")
+                        
+                        # 检查是否@了当前机器人
+                        if mention_open_id == self.bot_open_id:
+                            logger.debug(f"Bot mentioned: {mention_open_id}")
+                            return True
                 
-                # 简化判断：只要有 mentions 就认为@了机器人
-                # 因为在群聊中，用户通常会@机器人来触发响应
-                return True
+                # 如果没有@当前机器人，返回 False
+                return False
             
             # 如果没有 mentions 字段，检查消息内容中是否包含 <at> 标签
             if hasattr(message, 'content'):
@@ -606,7 +615,10 @@ class XAgent:
                     # 检查是否包含 <at> 标签
                     if "<at" in text:
                         logger.debug(f"Found <at> tag in message content")
-                        return True
+                        # 如果已经记录了机器人的 open_id，检查是否在 <at> 标签中
+                        if self.bot_open_id and f"<at id=\"{self.bot_open_id}\"" in text:
+                            logger.debug(f"Bot mentioned in text: {self.bot_open_id}")
+                            return True
                 except:
                     pass
             
@@ -614,8 +626,8 @@ class XAgent:
             
         except Exception as e:
             logger.warning(f"Error checking bot mention: {e}")
-            # 出错时默认返回 True，避免漏掉消息
-            return True
+            # 出错时默认返回 False，避免漏掉消息
+            return False
     
     def _handle_config_command(
         self,
