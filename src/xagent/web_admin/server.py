@@ -105,9 +105,15 @@ class WebAdminServer:
             storage_path="./data/provider_configs.json"
         )
         
-        # Initialize tool state manager
+        # Initialize tool state manager with dynamic tool list provider
         from ..core.tool_state_manager import ToolStateManager
-        self.tool_state_manager = ToolStateManager()
+        from ..agents.tools import __all__ as tool_names
+
+        def get_tool_list():
+            """Get current list of all available tools"""
+            return list(tool_names)
+
+        self.tool_state_manager = ToolStateManager(tool_list_provider=get_tool_list)
         
         # Register API routes (pass rate_limits if available)
         register_api_routes(

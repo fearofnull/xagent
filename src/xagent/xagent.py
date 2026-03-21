@@ -509,6 +509,14 @@ class XAgent:
                     logger.info(f"[CLI] Executing with message: {message_with_language[:200]}...")
                     logger.info(f"[DEBUG] Full message_with_language length: {len(message_with_language)}")
                     logger.debug(f"[CLI] Message being passed to executor: {parsed_command.message[:200]}...")
+                    
+                    # 准备 additional_params，包含用户ID和聊天ID
+                    additional_params = {
+                        "user_id": sender_id,
+                        "chat_id": chat_id,
+                        "chat_type": chat_type
+                    }
+                    
                     # 临时更新 CLI 执行器的目标目录
                     if hasattr(executor, 'target_dir') and effective_config["target_project_dir"]:
                         original_target_dir = executor.target_dir
@@ -516,7 +524,7 @@ class XAgent:
                         
                         result = executor.execute(
                             message_with_language,
-                            additional_params={"user_id": sender_id}
+                            additional_params=additional_params
                         )
                         
                         # 恢复原始目录
@@ -524,7 +532,7 @@ class XAgent:
                     else:
                         result = executor.execute(
                             message_with_language,
-                            additional_params={"user_id": sender_id}
+                            additional_params=additional_params
                         )
                 
                 # 11. 响应格式化

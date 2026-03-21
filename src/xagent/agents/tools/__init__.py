@@ -22,6 +22,7 @@ from .desktop_screenshot import desktop_screenshot
 from .memory_search import create_memory_search_tool
 from .get_current_time import get_current_time
 from .cron_api import call_cron_api
+from .lark_messages import get_lark_messages
 
 __all__ = [
     "execute_python_code",
@@ -40,4 +41,5 @@ __all__ = [
     "create_memory_search_tool",
     "get_current_time",
     "call_cron_api",
+    "get_lark_messages",
 ]

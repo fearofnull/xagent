@@ -1238,7 +1238,9 @@ def register_api_routes(
     @auth_manager.require_auth
     def get_tools():
         """Get all tools with their enabled status
-        
+
+        Dynamically loads tools from the agents.tools module.
+
         Response:
             {
                 "success": true,
@@ -1252,62 +1254,50 @@ def register_api_routes(
             }
         """
         try:
-            # Define all available tools with their descriptions
-            tools = [
-                {
-                    "name": "execute_shell_command",
-                    "description": "Execute shell commands",
-                    "enabled": tool_state_manager.get_tool_state("execute_shell_command") if tool_state_manager else True
-                },
-                {
-                    "name": "read_file",
-                    "description": "Read file contents",
-                    "enabled": tool_state_manager.get_tool_state("read_file") if tool_state_manager else True
-                },
-                {
-                    "name": "write_file",
-                    "description": "Write content to file",
-                    "enabled": tool_state_manager.get_tool_state("write_file") if tool_state_manager else True
-                },
-                {
-                    "name": "edit_file",
-                    "description": "Edit file with find-and-replace",
-                    "enabled": tool_state_manager.get_tool_state("edit_file") if tool_state_manager else True
-                },
-                {
-                    "name": "get_current_time",
-                    "description": "Get current date and time",
-                    "enabled": tool_state_manager.get_tool_state("get_current_time") if tool_state_manager else True
-                },
-                {
-                    "name": "desktop_screenshot",
-                    "description": "Capture desktop screenshot",
-                    "enabled": tool_state_manager.get_tool_state("desktop_screenshot") if tool_state_manager else True
-                },
-                {
-                    "name": "send_file_to_user",
-                    "description": "Send file to user",
-                    "enabled": tool_state_manager.get_tool_state("send_file_to_user") if tool_state_manager else True
-                },
-                {
-                    "name": "call_cron_api",
-                    "description": "Call cron API",
-                    "enabled": tool_state_manager.get_tool_state("call_cron_api") if tool_state_manager else True
-                }
-            ]
-            
+            # Dynamically load tools from the tools module using relative import
+            from ...agents.tools import __all__ as tool_names
+            from ...agents import tools as tools_module
+
+            tools = []
+            for tool_name in tool_names:
+                try:
+                    # Get the tool function from the module
+                    tool_func = getattr(tools_module, tool_name, None)
+
+                    # Get description from docstring
+                    description = "No description available"
+                    if tool_func and hasattr(tool_func, '__doc__') and tool_func.__doc__:
+                        # Extract first line of docstring as description
+                        doc_lines = tool_func.__doc__.strip().split('\n')
+                        if doc_lines:
+                            description = doc_lines[0].strip()
+
+                    tools.append({
+                        "name": tool_name,
+                        "description": description,
+                        "enabled": tool_state_manager.get_tool_state(tool_name) if tool_state_manager else True
+                    })
+                except Exception as e:
+                    logger.warning(f"Failed to load tool {tool_name}: {e}")
+                    # Still add the tool with default description
+                    tools.append({
+                        "name": tool_name,
+                        "description": f"Tool: {tool_name}",
+                        "enabled": tool_state_manager.get_tool_state(tool_name) if tool_state_manager else True
+                    })
+
             return jsonify({
                 'success': True,
                 'data': tools
             }), 200
-            
+
         except Exception as e:
             logger.error(f"Error getting tools: {e}", exc_info=True)
             return jsonify({
                 'success': False,
                 'error': {
                     'code': 'INTERNAL_ERROR',
-                    'message': 'Failed to retrieve tools'
+                    'message': f'Failed to retrieve tools: {str(e)}'
                 }
             }), 500
     

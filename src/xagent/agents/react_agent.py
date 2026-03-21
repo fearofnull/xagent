@@ -14,16 +14,7 @@ from agentscope.memory import InMemoryMemory
 from agentscope.message import Msg
 from agentscope.tool import Toolkit
 
-from .tools import (
-    execute_shell_command,
-    read_file,
-    write_file,
-    edit_file,
-    get_current_time,
-    desktop_screenshot,
-    send_file_to_user,
-    call_cron_api,
-)
+from . import tools as tools_module
 from .memory import MemoryManager
 from ..constant import (
     MEMORY_COMPACT_KEEP_RECENT,
@@ -109,6 +100,8 @@ class XAgent(ReActAgent):
     def _create_toolkit(self) -> Toolkit:
         """Create and populate toolkit with built-in tools.
 
+        Dynamically loads all tools from the tools module.
+
         Returns:
             Configured toolkit instance
         """
@@ -121,23 +114,25 @@ class XAgent(ReActAgent):
         except:
             tool_state_manager = None
 
-        # Register built-in tools if they are enabled
-        if not tool_state_manager or tool_state_manager.get_tool_state("execute_shell_command"):
-            toolkit.register_tool_function(execute_shell_command)
-        if not tool_state_manager or tool_state_manager.get_tool_state("read_file"):
-            toolkit.register_tool_function(read_file)
-        if not tool_state_manager or tool_state_manager.get_tool_state("write_file"):
-            toolkit.register_tool_function(write_file)
-        if not tool_state_manager or tool_state_manager.get_tool_state("edit_file"):
-            toolkit.register_tool_function(edit_file)
-        if not tool_state_manager or tool_state_manager.get_tool_state("get_current_time"):
-            toolkit.register_tool_function(get_current_time)
-        if not tool_state_manager or tool_state_manager.get_tool_state("desktop_screenshot"):
-            toolkit.register_tool_function(desktop_screenshot)
-        if not tool_state_manager or tool_state_manager.get_tool_state("send_file_to_user"):
-            toolkit.register_tool_function(send_file_to_user)
-        if not tool_state_manager or tool_state_manager.get_tool_state("call_cron_api"):
-            toolkit.register_tool_function(call_cron_api)
+        # Dynamically register all tools from the tools module
+        for tool_name in tools_module.__all__:
+            try:
+                # Check if tool is enabled
+                if tool_state_manager and not tool_state_manager.get_tool_state(tool_name):
+                    logger.debug(f"Tool {tool_name} is disabled, skipping")
+                    continue
+
+                # Get the tool function from the module
+                tool_func = getattr(tools_module, tool_name, None)
+                if tool_func is None:
+                    logger.warning(f"Tool {tool_name} not found in tools module")
+                    continue
+
+                # Register the tool function
+                toolkit.register_tool_function(tool_func)
+                logger.debug(f"Registered tool: {tool_name}")
+            except Exception as e:
+                logger.warning(f"Failed to register tool {tool_name}: {e}")
 
         # Register skills from active_skills directory
         self._register_skills(toolkit)

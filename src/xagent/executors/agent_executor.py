@@ -142,6 +142,21 @@ class AgentExecutor(AIAPIExecutor):
         import asyncio
         from agentscope.message import Msg
         
+        # 从 additional_params 中提取上下文信息并设置环境变量
+        if additional_params:
+            chat_id = additional_params.get('chat_id')
+            chat_type = additional_params.get('chat_type')
+            user_id = additional_params.get('user_id')
+            if chat_id:
+                import os as _os
+                _os.environ['CURRENT_CHAT_ID'] = chat_id
+            if chat_type:
+                import os as _os
+                _os.environ['CURRENT_CHAT_TYPE'] = chat_type
+            if user_id:
+                import os as _os
+                _os.environ['CURRENT_USER_ID'] = user_id
+        
         try:
             # 转换对话历史为 AgentScope 消息格式
             messages = []
