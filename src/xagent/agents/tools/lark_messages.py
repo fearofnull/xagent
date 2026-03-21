@@ -2,6 +2,7 @@
 """飞书消息历史读取工具"""
 
 import logging
+import os
 from typing import Optional
 
 from agentscope.tool import ToolResponse
@@ -9,6 +10,13 @@ from agentscope.message import TextBlock
 
 from lark_oapi import Client as LarkClient
 from lark_oapi.api.im.v1 import ListMessageRequest
+
+from ...core.message_parser import (
+    parse_message_body,
+    replace_mentions,
+    format_timestamp,
+    format_sender_info,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,38 +37,30 @@ def _get_lark_client() -> LarkClient:
 
 
 def _format_message_content(msg) -> str:
-    """格式化单条消息内容"""
+    """格式化单条消息内容（用于展示历史消息）"""
     try:
         msg_type = getattr(msg, 'msg_type', 'unknown')
-        body = getattr(msg, 'body', {}) or {}
+        create_time = getattr(msg, 'create_time', '')
+        sender = getattr(msg, 'sender', None)
+        body = getattr(msg, 'body', None)
+        mentions = getattr(msg, 'mentions', None)
         
-        if isinstance(body, dict):
-            content = body.get('content', '')
+        time_str = format_timestamp(create_time) if create_time else ""
+        sender_str = format_sender_info(sender) if sender else "未知"
+        
+        content_str = ""
+        if body:
+            content = getattr(body, 'content', '')
+            if content:
+                content_str = parse_message_body(msg_type, content)
+                content_str = replace_mentions(content_str, mentions)
+        
+        if time_str:
+            return f"[{time_str}] {sender_str}: {content_str}"
         else:
-            content = str(body)
-        
-        sender = getattr(msg, 'sender', {}) or {}
-        if isinstance(sender, dict):
-            sender_id = sender.get('id', 'unknown')
-            sender_type = sender.get('sender_type', 'unknown')
-        else:
-            sender_id = 'unknown'
-            sender_type = 'unknown'
-        
-        create_time = getattr(msg, 'create_time', 'unknown')
-        
-        if msg_type == 'text':
-            import json
-            try:
-                content_obj = json.loads(content)
-                text = content_obj.get('text', content)
-            except (json.JSONDecodeError, TypeError):
-                text = content
-            return f"[{create_time}] {sender_id} ({sender_type}): {text}"
-        else:
-            return f"[{create_time}] {sender_id} ({sender_type}) [{msg_type}]: {content[:200]}"
+            return f"{sender_str}: {content_str}"
     except Exception as e:
-        return f"[解析失败] {str(e)}"
+        return f"[解析失败: {str(e)}]"
 
 
 async def get_lark_messages(
@@ -79,86 +79,86 @@ async def get_lark_messages(
         page_token: 分页令牌，首次请求不填
         start_time: 起始时间戳（秒），可选
         end_time: 结束时间戳（秒），可选
-        sort_type: 排序方式，"ByCreateTimeAsc" 或 "ByCreateTimeDesc"
-
-    Returns:
-        ToolResponse: 包含消息列表或错误信息
-    """
-    # 如果没有提供 chat_id，尝试从环境变量获取
-    if not chat_id:
-        import os
-        chat_id = os.environ.get('CURRENT_CHAT_ID')
-        if not chat_id:
-            return ToolResponse(
-                content=[TextBlock(
-                    type="text",
-                    text="错误: 无法获取当前聊天ID。请确保在飞书会话中调用此工具，或手动提供 chat_id 参数。"
-                )]
-            )
+        sort_type: 排序方式，默认 ByCreateTimeDesc（按创建时间倒序）
     
-    if page_size < 1 or page_size > 50:
-        return ToolResponse(
-            content=[TextBlock(
-                type="text",
-                text="错误: page_size 必须在 1-50 之间"
-            )]
-        )
-
-    if sort_type not in ("ByCreateTimeAsc", "ByCreateTimeDesc"):
-        return ToolResponse(
-            content=[TextBlock(
-                type="text",
-                text="错误: sort_type 必须是 'ByCreateTimeAsc' 或 'ByCreateTimeDesc'"
-            )]
-        )
-
+    Returns:
+        ToolResponse: 包含历史消息的响应
+    """
     try:
+        # 如果没有传入 chat_id，尝试从环境变量获取
+        if not chat_id:
+            chat_id = os.environ.get('CURRENT_CHAT_ID')
+            if not chat_id:
+                return ToolResponse(
+                    content=[
+                        TextBlock(
+                            type="text",
+                            text="错误：无法获取 chat_id，请确保在正确的聊天环境中"
+                        ),
+                    ],
+                )
+        
         client = _get_lark_client()
-
-        request_builder = (
+        
+        # 构建请求，只有当 page_token 不为 None 且不为空字符串时才设置
+        builder = (
             ListMessageRequest.builder()
             .container_id_type("chat")
             .container_id(chat_id)
             .page_size(page_size)
             .sort_type(sort_type)
         )
-
+        
         if page_token:
-            request_builder.page_token(page_token)
+            builder.page_token(page_token)
+        
         if start_time:
-            request_builder.start_time(str(start_time))
+            builder.start_time(start_time)
+        
         if end_time:
-            request_builder.end_time(str(end_time))
-
-        request = request_builder.build()
+            builder.end_time(end_time)
+        
+        request = builder.build()
+        
         response = client.im.v1.message.list(request)
-
+        
         if not response.success():
             return ToolResponse(
-                content=[TextBlock(
-                    type="text",
-                    text=f"获取消息失败: code={response.code}, msg={response.msg}"
-                )]
+                content=[
+                    TextBlock(
+                        type="text",
+                        text=f"获取消息失败: {response.msg} (code: {response.code})"
+                    ),
+                ],
             )
-
-        data = response.data
-        messages = data.items if data else []
-
-        if not messages:
-            return ToolResponse(
-                content=[TextBlock(type="text", text="没有找到消息记录")]
-            )
-
-        formatted_messages = [_format_message_content(msg) for msg in messages]
-        result_text = f"共获取 {len(messages)} 条消息:\n\n" + "\n\n".join(formatted_messages)
-
-        if hasattr(data, 'page_token') and data.page_token and hasattr(data, 'has_more') and data.has_more:
-            result_text += f"\n\n⚠️ 还有更多消息，请使用 page_token=\"{data.page_token}\" 继续获取"
-
-        return ToolResponse(content=[TextBlock(type="text", text=result_text)])
-
-    except Exception as e:
-        logger.error(f"获取飞书消息失败: {e}")
+        
+        messages = response.data.items
+        page_token = response.data.page_token
+        has_more = response.data.has_more
+        
+        formatted_messages = []
+        for msg in messages:
+            formatted_msg = _format_message_content(msg)
+            formatted_messages.append(formatted_msg)
+        
+        # 构建简洁的返回文本，不包含可能导致AI误解的提示
+        result_text = "\n\n".join(formatted_messages)
+        
         return ToolResponse(
-            content=[TextBlock(type="text", text=f"获取消息失败: {str(e)}")]
+            content=[
+                TextBlock(
+                    type="text",
+                    text=result_text
+                ),
+            ],
+        )
+    except Exception as e:
+        logger.error(f"获取飞书消息失败: {e}", exc_info=True)
+        return ToolResponse(
+            content=[
+                TextBlock(
+                    type="text",
+                    text=f"获取消息时发生错误: {str(e)}"
+                ),
+            ],
         )

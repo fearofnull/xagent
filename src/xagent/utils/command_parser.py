@@ -92,6 +92,9 @@ class CommandParser:
     def extract_provider_prefix(self, message: str) -> Optional[Tuple[str, str, str]]:
         """从消息中提取提供商前缀
         
+        支持在消息的任何位置查找命令前缀，而不仅限于开头
+        这是为了处理 @提及在开头的情况，如："@机器人 @agent 命令"
+        
         Args:
             message: 用户消息
             
@@ -110,10 +113,18 @@ class CommandParser:
         )
         
         for prefix, (provider, layer) in sorted_prefixes:
-            # 检查消息是否以前缀开头
-            if message_lower.startswith(prefix.lower()):
+            # 检查消息中是否包含前缀
+            # 确保前缀是一个完整的词（前后是空格或边界）
+            prefix_lower = prefix.lower()
+            # 使用正则表达式确保前缀是一个完整的词
+            pattern = r'(^|\s)' + re.escape(prefix_lower) + r'(\s|$)'
+            
+            match = re.search(pattern, message_lower)
+            if match:
                 # 去除前缀，保留原始消息的大小写
-                final_message = message[len(prefix):].strip()
+                # 使用正则表达式替换，确保只替换完整的词
+                pattern = r'(^|\s)' + re.escape(prefix) + r'(\s|$)'
+                final_message = re.sub(pattern, r'\1\2', message).strip()
                 return provider, layer, final_message
         
         return None
