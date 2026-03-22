@@ -281,51 +281,7 @@ class ExecutorRegistry:
             return "API key not configured or invalid"
         else:
             return "CLI tool not installed or target directory not accessible"
-    
-    def get_openai_executor(
-        self,
-        base_url: str,
-        api_key: str,
-        model: str,
-        timeout: int = 60
-    ) -> AIExecutor:
-        """创建并返回 OpenAI 兼容执行器
-        
-        此方法用于统一 API 接口，根据提供商配置动态创建 OpenAI 兼容的执行器。
-        支持标准 OpenAI API 以及任何兼容 OpenAI API 格式的服务。
-        
-        Args:
-            base_url: API 端点 URL
-            api_key: API 密钥
-            model: 模型名称
-            timeout: 请求超时时间（秒），默认 60 秒
-            
-        Returns:
-            OpenAI 兼容执行器实例
-            
-        Example:
-            >>> registry = ExecutorRegistry()
-            >>> executor = registry.get_openai_executor(
-            ...     base_url="https://api.openai.com/v1",
-            ...     api_key="sk-...",
-            ...     model="gpt-4"
-            ... )
-            >>> result = executor.execute("Hello, world!")
-        """
-        from ..executors.openai_api_executor import OpenAIAPIExecutor
-        
-        logger.info(
-            f"Creating OpenAI compatible executor: "
-            f"base_url={base_url}, model={model}, timeout={timeout}"
-        )
-        
-        return OpenAIAPIExecutor(
-            api_key=api_key,
-            model=model,
-            timeout=timeout,
-            base_url=base_url
-        )
-    
+
     def _load_from_config(self, config_path: str) -> None:
         """从配置文件加载执行器注册信息
         

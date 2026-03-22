@@ -30,10 +30,10 @@ class TestCommandParserPrefixMapping:
         """验证所有 CLI 前缀存在于映射中"""
         parser = CommandParser()
         cli_prefixes = {
-            "@claude-cli": ("claude", "cli"),
+            "@claude": ("claude", "cli"),
             "@code": ("claude", "cli"),
-            "@gemini-cli": ("gemini", "cli"),
-            "@qwen-cli": ("qwen", "cli"),
+            "@gemini": ("gemini", "cli"),
+            "@qwen": ("qwen", "cli"),
         }
         
         for prefix, expected_value in cli_prefixes.items():
@@ -156,9 +156,9 @@ class TestCliPrefixParsing:
     """测试 CLI 前缀解析"""
     
     def test_claude_cli_prefix(self):
-        """测试 @claude-cli 前缀解析"""
+        """测试 @claude 前缀解析"""
         parser = CommandParser()
-        parsed, params = parser.parse_command("@claude-cli 分析代码")
+        parsed, params = parser.parse_command("@claude 分析代码")
         
         assert parsed.provider == "claude"
         assert parsed.execution_layer == "cli"
@@ -176,9 +176,9 @@ class TestCliPrefixParsing:
         assert parsed.explicit is True
     
     def test_gemini_cli_prefix(self):
-        """测试 @gemini-cli 前缀解析"""
+        """测试 @gemini 前缀解析"""
         parser = CommandParser()
-        parsed, params = parser.parse_command("@gemini-cli 查看项目结构")
+        parsed, params = parser.parse_command("@gemini 查看项目结构")
         
         assert parsed.provider == "gemini"
         assert parsed.execution_layer == "cli"
@@ -186,9 +186,9 @@ class TestCliPrefixParsing:
         assert parsed.explicit is True
     
     def test_qwen_cli_prefix(self):
-        """测试 @qwen-cli 前缀解析"""
+        """测试 @qwen 前缀解析"""
         parser = CommandParser()
-        parsed, params = parser.parse_command("@qwen-cli 执行命令")
+        parsed, params = parser.parse_command("@qwen 执行命令")
         
         assert parsed.provider == "qwen"
         assert parsed.execution_layer == "cli"
@@ -199,10 +199,10 @@ class TestCliPrefixParsing:
         """测试所有 CLI 前缀都能正确解析"""
         parser = CommandParser()
         cli_test_cases = [
-            ("@claude-cli", "claude", "cli"),
+            ("@claude", "claude", "cli"),
             ("@code", "claude", "cli"),
-            ("@gemini-cli", "gemini", "cli"),
-            ("@qwen-cli", "qwen", "cli"),
+            ("@gemini", "gemini", "cli"),
+            ("@qwen", "qwen", "cli"),
         ]
         
         for prefix, expected_provider, expected_layer in cli_test_cases:
@@ -222,7 +222,7 @@ class TestPrefixPriority:
         """测试更长的前缀优先匹配"""
         parser = CommandParser()
         
-        parsed, params = parser.parse_command("@claude-cli 测试")
+        parsed, params = parser.parse_command("@claude 测试")
         assert parsed.provider == "claude"
         assert parsed.execution_layer == "cli"
         assert parsed.explicit is True
@@ -236,7 +236,7 @@ class TestMessageContentPreservation:
         parser = CommandParser()
         test_cases = [
             ("@agent 你好世界", "你好世界"),
-            ("@claude-cli 分析这段代码", "分析这段代码"),
+            ("@claude 分析这段代码", "分析这段代码"),
             ("@code 修改 main.py 文件", "修改 main.py 文件"),
         ]
         

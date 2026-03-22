@@ -27,9 +27,9 @@ cp .env.example .env
 - `@agent` → Agent（显式指定使用 Agent）
 
 #### CLI 层（代码操作）
-- `@claude-cli` 或 `@code` → Claude Code CLI
-- `@gemini-cli` → Gemini CLI
-- `@qwen-cli` → Qwen Code CLI
+- `@claude` 或 `@code` → Claude Code CLI
+- `@gemini` → Gemini CLI
+- `@qwen` → Qwen Code CLI
 
 ### 使用示例
 
@@ -41,7 +41,7 @@ cp .env.example .env
 @code 分析一下这个项目的架构
 
 # 使用 Gemini CLI 查看代码
-@gemini-cli 查看 src/main.py 文件的内容
+@gemini 查看 src/main.py 文件的内容
 
 # 使用 Agent 写代码
 写一个快速排序算法
@@ -107,7 +107,7 @@ CLAUDE_CLI_TARGET_DIR=E:\IdeaProjects\special-project
 - **默认值**: 空（使用 TARGET_PROJECT_DIR）
 - **说明**: Claude Code CLI 执行代码操作的目标项目目录
 - **使用场景**: 
-  - 当用户使用 `@claude-cli` 或 `@code` 命令时
+  - 当用户使用 `@claude` 或 `@code` 命令时
   - 当智能路由选择 Claude CLI 层时
 - **示例**: 
   - Windows: `E:\IdeaProjects\my-project`
@@ -123,7 +123,7 @@ CLAUDE_CLI_TARGET_DIR=E:\IdeaProjects\special-project
 - **默认值**: 空（使用 TARGET_PROJECT_DIR）
 - **说明**: Gemini CLI 执行代码操作的目标项目目录
 - **使用场景**: 
-  - 当用户使用 `@gemini-cli` 命令时
+  - 当用户使用 `@gemini` 命令时
   - 当智能路由选择 Gemini CLI 层时
 - **示例**: 
   - Windows: `E:\IdeaProjects\another-project`
@@ -138,7 +138,7 @@ CLAUDE_CLI_TARGET_DIR=E:\IdeaProjects\special-project
 - **默认值**: 空（使用 TARGET_PROJECT_DIR）
 - **说明**: Qwen Code CLI 执行代码操作的目标项目目录
 - **使用场景**: 
-  - 当用户使用 `@qwen-cli` 命令时
+  - 当用户使用 `@qwen` 命令时
 - **示例**: 
   - Windows: `E:\IdeaProjects\my-project`
   - Linux/Mac: `/home/user/projects/my-project`
@@ -422,7 +422,7 @@ CLAUDE_CLI_TARGET_DIR=E:\IdeaProjects\backend-project
 GEMINI_CLI_TARGET_DIR=E:\IdeaProjects\frontend-project
 ```
 
-用户可以通过 `@code` 操作后端项目，通过 `@gemini-cli` 操作前端项目。
+用户可以通过 `@code` 操作后端项目，通过 `@gemini` 操作前端项目。
 
 ### 场景 5: 代码操作为主
 ```bash
@@ -447,9 +447,9 @@ AI_TIMEOUT=1200
 | 命令前缀 | AI CLI | 说明 | 目标目录配置 |
 |---------|--------|------|-------------|
 | `@code` | Claude Code CLI | Claude 代码操作（推荐） | CLAUDE_CLI_TARGET_DIR |
-| `@claude-cli` | Claude Code CLI | 同上（显式指定） | CLAUDE_CLI_TARGET_DIR |
-| `@gemini-cli` | Gemini CLI | Gemini 代码操作 | GEMINI_CLI_TARGET_DIR |
-| `@qwen-cli` | Qwen Code CLI | Qwen 代码操作 | QWEN_CLI_TARGET_DIR |
+| `@claude` | Claude Code CLI | 同上（显式指定） | CLAUDE_CLI_TARGET_DIR |
+| `@gemini` | Gemini CLI | Gemini 代码操作 | GEMINI_CLI_TARGET_DIR |
+| `@qwen` | Qwen Code CLI | Qwen 代码操作 | QWEN_CLI_TARGET_DIR |
 
 ### 使用技巧
 
@@ -469,7 +469,7 @@ AI_TIMEOUT=1200
 3. **不同项目的代码操作**：
    ```
    @code 分析后端项目的数据库设计
-   @gemini-cli 查看前端项目的组件结构
+   @gemini 查看前端项目的组件结构
    ```
 
 4. **切换提供商**：

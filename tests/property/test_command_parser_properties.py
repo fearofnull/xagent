@@ -12,7 +12,7 @@ from src.xagent.models import ParsedCommand
 
 
 # 定义有效的命令前缀
-VALID_PREFIXES = ["@agent", "@claude-cli", "@code", "@gemini-cli", "@qwen-cli"]
+VALID_PREFIXES = ["@agent", "@claude", "@code", "@gemini", "@qwen"]
 
 # 定义传统（已移除）的命令前缀
 LEGACY_PREFIXES = ["@gpt", "@claude-api", "@gemini-api", "@openai"]
@@ -20,10 +20,10 @@ LEGACY_PREFIXES = ["@gpt", "@claude-api", "@gemini-api", "@openai"]
 # 前缀到期望结果的映射
 PREFIX_EXPECTATIONS = {
     "@agent": ("agent", "api"),
-    "@claude-cli": ("claude", "cli"),
+    "@claude": ("claude", "cli"),
     "@code": ("claude", "cli"),
-    "@gemini-cli": ("gemini", "cli"),
-    "@qwen-cli": ("qwen", "cli"),
+    "@gemini": ("gemini", "cli"),
+    "@qwen": ("qwen", "cli"),
 }
 
 

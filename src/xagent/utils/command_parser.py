@@ -22,12 +22,12 @@ class CommandParser:
         # Agent
         "@agent": ("agent", "api"),
         # Claude CLI
-        "@claude-cli": ("claude", "cli"),
+        "@claude": ("claude", "cli"),
         "@code": ("claude", "cli"),
         # Gemini CLI
-        "@gemini-cli": ("gemini", "cli"),
+        "@gemini": ("gemini", "cli"),
         # Qwen Code CLI
-        "@qwen-cli": ("qwen", "cli"),
+        "@qwen": ("qwen", "cli"),
     }
     
     # CLI 关键词（中英文）

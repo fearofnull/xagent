@@ -5,7 +5,7 @@
     "title": "📖 飞书AI机器人使用帮助 / Help",
     "sections": [
       {
-        "title": "🤖 **AI提供商命令 / AI Provider Commands**",
+        "title": "🤖 **执行器选择 / Executor Selection**",
         "subsections": [
           {
             "title": "Agent层（默认）/ Agent Layer (Default):",
@@ -24,15 +24,15 @@
             "title": "CLI层（代码能力）/ CLI Layer (Code Capabilities):",
             "commands": [
               {
-                "command": "@claude-cli",
+                "command": "@claude",
                 "description": "使用 Claude Code CLI"
               },
               {
-                "command": "@gemini-cli",
+                "command": "@gemini",
                 "description": "使用 Gemini CLI"
               },
               {
-                "command": "@qwen-cli",
+                "command": "@qwen",
                 "description": "使用 Qwen Code CLI"
               }
             ]
@@ -90,7 +90,7 @@
         "examples": [
           "什么是人工智能？（使用 Agent）",
           "@agent 搜索最新的 AI 新闻",
-          "@claude-cli 查看项目结构",
+          "@claude 查看项目结构",
           "/setdir /path/to/project（设置工作目录）",
           "/lang en-US（切换到英文）",
           "/cliprovider claude（设置默认CLI提供商）",
