@@ -52,15 +52,49 @@ class XAgent:
             config: 机器人配置
         """
         self.config = config
-        
+
+        # 复制 MD 提示词文件到工作目录
+        self._copy_md_files_to_working_dir()
+
         self._init_lark_client()
         self._init_core_components()
         self._init_provider_config()
         self._register_executors()
         self._init_coordinators()
         self._init_event_handlers()
-        
+
         logger.info("XAgent initialized successfully")
+
+    def _copy_md_files_to_working_dir(self):
+        """复制 MD 提示词文件到工作目录"""
+        import shutil
+        from pathlib import Path
+        from .constant import WORKING_DIR
+
+        # MD 文件源目录
+        md_files_dir = Path(__file__).parent / "agents" / "md_files"
+
+        if not md_files_dir.exists():
+            logger.warning("MD files directory not found: %s", md_files_dir)
+            return
+
+        # 确保工作目录存在
+        WORKING_DIR.mkdir(parents=True, exist_ok=True)
+
+        # 复制所有 .md 文件到工作目录
+        copied_count = 0
+        for md_file in md_files_dir.glob("*.md"):
+            target_file = WORKING_DIR / md_file.name
+            if not target_file.exists():
+                try:
+                    shutil.copy2(md_file, target_file)
+                    logger.info("Copied md file: %s", md_file.name)
+                    copied_count += 1
+                except Exception as e:
+                    logger.error("Failed to copy md file '%s': %s", md_file.name, e)
+
+        if copied_count > 0:
+            logger.info("Copied %d md file(s) to %s", copied_count, WORKING_DIR)
     
     def _init_lark_client(self):
         """初始化飞书客户端"""

@@ -12,13 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 def copy_md_files(
-    language: str,
     skip_existing: bool = False,
 ) -> list[str]:
     """Copy md files from agents/md_files to working directory.
 
     Args:
-        language: Language code (e.g. 'en', 'zh')
         skip_existing: If True, skip files that already exist in working dir.
 
     Returns:
@@ -26,19 +24,12 @@ def copy_md_files(
     """
     from ...constant import WORKING_DIR
 
-    # Get md_files directory path with language subdirectory
-    md_files_dir = Path(__file__).parent.parent / "md_files" / language
+    # Get md_files directory path
+    md_files_dir = Path(__file__).parent.parent / "md_files"
 
     if not md_files_dir.exists():
-        logger.warning(
-            "MD files directory not found: %s, falling back to 'en'",
-            md_files_dir,
-        )
-        # Fallback to English if specified language not found
-        md_files_dir = Path(__file__).parent.parent / "md_files" / "en"
-        if not md_files_dir.exists():
-            logger.error("Default 'en' md files not found either")
-            return []
+        logger.error("MD files directory not found: %s", md_files_dir)
+        return []
 
     # Ensure working directory exists
     WORKING_DIR.mkdir(parents=True, exist_ok=True)
@@ -63,9 +54,8 @@ def copy_md_files(
 
     if copied_files:
         logger.debug(
-            "Copied %d md file(s) [%s] to %s",
+            "Copied %d md file(s) to %s",
             len(copied_files),
-            language,
             WORKING_DIR,
         )
 

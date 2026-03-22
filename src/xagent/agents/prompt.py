@@ -23,6 +23,7 @@ class PromptConfig:
     """Configuration for system prompt building."""
 
     # Define file loading order: (filename, required)
+    # SECURITY.md 已硬编码在 react_agent.py 中，不需要从这里加载
     FILE_ORDER = [
         ("AGENTS.md", True),
         ("SOUL.md", True),
