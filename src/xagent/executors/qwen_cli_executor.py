@@ -68,7 +68,7 @@ class QwenCLIExecutor(AICLIExecutor):
     ) -> List[str]:
         """构建 Qwen Code CLI headless 命令参数
 
-        格式：qwen [--yolo] [--resume <session_id>] --output-format json -p <prompt>
+        格式：qwen --yolo [--continue] [--resume <session_id>] --output-format json
         """
         args = [self.get_command_name()]
 
@@ -82,14 +82,12 @@ class QwenCLIExecutor(AICLIExecutor):
                 session_id = self.get_or_create_session(user_id)
                 if session_id:
                     args.extend(["--resume", session_id])
+                else:
+                    # 没有会话 ID 时使用 --continue 继续当前项目的最新会话
+                    args.append("--continue")
 
         # JSON 输出，便于解析 session_id 和 result
         args.extend(["--output-format", "json"])
-
-        # 用安全规则包装用户提示
-        wrapped_prompt = self._wrap_prompt_with_security_rules(user_prompt)
-        # 用户提示
-        args.extend(["-p", wrapped_prompt])
 
         return args
 
@@ -117,12 +115,16 @@ class QwenCLIExecutor(AICLIExecutor):
 
         try:
             start_time = time.time()
+            # 用安全规则包装用户提示
+            wrapped_prompt = self._wrap_prompt_with_security_rules(user_prompt)
+            
             result = subprocess.run(
                 command_args,
                 cwd=self.target_dir,
                 capture_output=True,
                 text=True,
                 encoding='utf-8',
+                input=wrapped_prompt,
                 timeout=self.timeout
             )
             execution_time = time.time() - start_time
@@ -137,8 +139,7 @@ class QwenCLIExecutor(AICLIExecutor):
 
             if result.returncode == 0 and result.stdout.strip():
                 try:
-                    # Qwen Code 输出 JSON 数组，格式与 Gemini CLI 类似
-                    # 结构: [{type: "system", ...}, {type: "assistant", ...}, {type: "result", ...}]
+                    # Qwen Code 输出 JSON 数组，格式：[{type: "system", ...}, {type: "assistant", ...}, {type: "result", ...}]
                     messages = json.loads(result.stdout)
                     if isinstance(messages, list):
                         # 优先取 result 消息的 result 字段
@@ -150,7 +151,8 @@ class QwenCLIExecutor(AICLIExecutor):
                             # 没有 result 消息，取最后一条 assistant 消息的文本
                             for msg in reversed(messages):
                                 if isinstance(msg, dict) and msg.get("type") == "assistant":
-                                    content = msg.get("message", {}).get("content", [])
+                                    message_data = msg.get("message", {})
+                                    content = message_data.get("content", [])
                                     if isinstance(content, list):
                                         texts = [c.get("text", "") for c in content if c.get("type") == "text"]
                                         if texts:
