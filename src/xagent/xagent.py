@@ -277,6 +277,10 @@ class XAgent:
         协调 MessageProcessor -> CommandDispatcher -> ExecutionCoordinator 的流程
         """
         try:
+            # 打印原始消息
+            logger.info(f"[原始消息] 接收到消息: message_id={data.event.message.message_id}, chat_type={data.event.message.chat_type}, sender_id={data.event.sender.sender_id}")
+            logger.info(f"[原始消息] 消息内容: {data.event.message.content}")
+            
             processed = self.message_processor.process(data)
             if processed is None:
                 return

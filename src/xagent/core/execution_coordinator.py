@@ -151,6 +151,10 @@ class ExecutionCoordinator:
             context.final_message, effective_config.get("response_language")
         )
         
+        # 打印要处理的提示词
+        logger.info(f"[处理提示词] 执行器: {executor_name}, 提示词长度: {len(message_with_language)}")
+        logger.info(f"[处理提示词] 内容: {message_with_language}")
+        
         additional_params = {
             "user_id": context.sender_id,
             "username": context.username,

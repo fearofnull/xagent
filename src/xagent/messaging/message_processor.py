@@ -225,9 +225,9 @@ class MessageProcessor:
     
     def _parse_command(self, message_content: str) -> Tuple[ParsedCommand, dict]:
         """解析命令"""
-        logger.info(f"[DEBUG] Original message content: {message_content[:200]}...")
+        logger.info(f"[解析命令] 原始消息内容: {message_content[:200]}...")
         parsed_command, temp_params = self.command_parser.parse_command(message_content)
-        logger.info(f"[DEBUG] Parsed command: provider={parsed_command.provider}, "
+        logger.info(f"[解析命令] 解析结果: provider={parsed_command.provider}, "
                    f"layer={parsed_command.execution_layer}, explicit={parsed_command.explicit}")
         return parsed_command, temp_params
     
@@ -246,6 +246,9 @@ class MessageProcessor:
                     quoted_content, parsed_command.message
                 )
                 logger.info(f"Combined message with quoted content, length={len(final_message)}")
+                logger.info(f"Combined message content: {final_message}")
+        else:
+            logger.info(f"No quoted message, using original message: {final_message}")
         
         return final_message
     
